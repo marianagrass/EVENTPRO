@@ -2,6 +2,76 @@
    pages/user/user-events.js — Catálogo "Explorar eventos" + inscripción
    ========================================================== */
 
+/**
+ * EventCard(ev) — tarjeta de evento (Explorar). Los cupos se muestran UNA sola vez:
+ * en el badge superpuesto sobre la imagen. La barra inferior solo lleva su label.
+ */
+function EventCard(ev) {
+  // cupos_restantes = capacidad_total - inscritos_actuales (ver UserApp.getSpots).
+  // Se recalcula en cada render: al inscribirse/cancelar (o si llega un nuevo
+  // ev.registered desde el backend) el badge y la barra se actualizan juntos.
+  const spots = UserApp.getSpots(ev.id);
+  const isFull = spots <= 0;
+  const isLow = spots <= 20;
+  const isRegistered = UserApp.registrations.includes(ev.id);
+  const tc = TYPE_STYLE[ev.type];
+  const d = parseDate(ev.date);
+  const spotsPercent = percent(spots, ev.capacity);
+
+  const spotsBadge = isFull
+    ? `<span class="img-badge img-badge-lg" style="background:rgba(160,80,80,.9)">Agotado</span>`
+    : `<span class="img-badge img-badge-lg" style="background:${isLow ? "rgba(200,100,40,.9)" : "rgba(0,0,0,.55)"}">${isLow ? "⚡ " : ""}${spots} cupos</span>`;
+
+  const checkmark = isRegistered ? `
+    <div class="reg-overlay"><div class="reg-check">${icon("check", 14, { color: "#cfbb99", width: 3 })}</div></div>` : "";
+
+  const barBg = isFull ? "#a05050" : isLow ? "linear-gradient(90deg,#a06020,#d48040)" : tc.gradient;
+
+  const cta = isRegistered
+    ? `<div class="row" style="gap:8px">
+         <div class="registered-tag">${icon("check", 13, { color: "#cfbb99", width: 2.5 })}<span>Inscrito</span></div>
+         <button class="btn btn-danger" style="padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600"
+                 data-click="user:unregister" data-id="${ev.id}">Cancelar</button>
+       </div>`
+    : `<button class="cta-btn cta-lg" ${isFull ? "disabled" : `style="background:${tc.gradient}"`} data-click="userEvents:ask" data-id="${ev.id}">
+         ${isFull ? "Sin cupos disponibles" : "Inscribirse"}
+       </button>`;
+
+  return `
+    <div class="card card-hover uev-card">
+      <div class="uev-img">
+        <img src="${esc(ev.image)}" alt="${esc(ev.name)}" loading="lazy">
+        <div class="img-shade" style="background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.1) 50%,transparent 100%)"></div>
+        <div style="position:absolute;top:12px;left:12px"><span class="img-badge img-badge-lg" style="background:${tc.gradient};color:#e5d7c4">${TYPE_LABEL[ev.type]}</span></div>
+        <div style="position:absolute;top:12px;right:12px">${spotsBadge}</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px">
+          <h3 class="uev-title">${esc(ev.name)}</h3>
+        </div>
+        ${checkmark}
+      </div>
+
+      <div class="uev-body">
+        <div class="col-stack" style="gap:5px;margin-bottom:12px">
+          <div class="ev-meta-row" style="font-size:12px;font-weight:500">
+            ${icon("calendar", 12)} ${d.toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "long" })} · ${esc(ev.time)}
+          </div>
+          <div class="ev-meta-row ellipsis" style="font-size:12px;color:#889063">${icon("pin", 12)} ${esc(ev.location)}</div>
+        </div>
+
+        <div style="margin-bottom:14px;margin-top:auto">
+          <div style="font-size:11px;margin-bottom:5px">
+            <span style="color:#889063;font-weight:500">Cupos disponibles</span>
+          </div>
+          <div class="bar" style="height:6px;border-radius:4px">
+            <div class="bar-fill" style="width:${Math.max(0, spotsPercent)}%;background:${barBg};transition:width .5s ease"></div>
+          </div>
+        </div>
+
+        ${cta}
+      </div>
+    </div>`;
+}
+
 const UserEventsPage = {
   search: "",
   typeFilter: "todos",
@@ -18,70 +88,7 @@ const UserEventsPage = {
     });
   },
 
-  renderCard(ev) {
-    const spots = UserApp.getSpots(ev.id);
-    const isFull = spots <= 0;
-    const isLow = spots <= 20;
-    const isRegistered = UserApp.registrations.includes(ev.id);
-    const tc = TYPE_STYLE[ev.type];
-    const d = parseDate(ev.date);
-    const spotsPercent = percent(spots, ev.capacity);
-
-    const spotsBadge = isFull
-      ? `<span class="img-badge img-badge-lg" style="background:rgba(160,80,80,.9)">Agotado</span>`
-      : `<span class="img-badge img-badge-lg" style="background:${isLow ? "rgba(200,100,40,.9)" : "rgba(0,0,0,.55)"}">${isLow ? "⚡ " : ""}${spots} cupos</span>`;
-
-    const checkmark = isRegistered ? `
-      <div class="reg-overlay"><div class="reg-check">${icon("check", 14, { color: "#cfbb99", width: 3 })}</div></div>` : "";
-
-    const barBg = isFull ? "#a05050" : isLow ? "linear-gradient(90deg,#a06020,#d48040)" : tc.gradient;
-    const countColor = isFull ? "#a05050" : isLow ? "#8b5000" : "#354024";
-
-    const cta = isRegistered
-      ? `<div class="row" style="gap:8px">
-           <div class="registered-tag">${icon("check", 13, { color: "#cfbb99", width: 2.5 })}<span>Inscrito</span></div>
-           <button class="btn btn-danger" style="padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600"
-                   data-click="user:unregister" data-id="${ev.id}">Cancelar</button>
-         </div>`
-      : `<button class="cta-btn cta-lg" ${isFull ? "disabled" : `style="background:${tc.gradient}"`} data-click="userEvents:ask" data-id="${ev.id}">
-           ${isFull ? "Sin cupos disponibles" : "Inscribirse"}
-         </button>`;
-
-    return `
-      <div class="card card-hover uev-card">
-        <div class="uev-img">
-          <img src="${esc(ev.image)}" alt="${esc(ev.name)}" loading="lazy">
-          <div class="img-shade" style="background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.1) 50%,transparent 100%)"></div>
-          <div style="position:absolute;top:12px;left:12px"><span class="img-badge img-badge-lg" style="background:${tc.gradient};color:#e5d7c4">${TYPE_LABEL[ev.type]}</span></div>
-          <div style="position:absolute;top:12px;right:12px">${spotsBadge}</div>
-          <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px">
-            <h3 class="uev-title">${esc(ev.name)}</h3>
-          </div>
-          ${checkmark}
-        </div>
-
-        <div class="uev-body">
-          <div class="col-stack" style="gap:5px;margin-bottom:12px">
-            <div class="ev-meta-row" style="font-size:12px;font-weight:500">
-              ${icon("calendar", 12)} ${d.toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "long" })} · ${esc(ev.time)}
-            </div>
-            <div class="ev-meta-row ellipsis" style="font-size:12px;color:#889063">${icon("pin", 12)} ${esc(ev.location)}</div>
-          </div>
-
-          <div style="margin-bottom:14px;margin-top:auto">
-            <div class="row" style="justify-content:space-between;font-size:11px;margin-bottom:5px">
-              <span style="color:#889063;font-weight:500">Cupos disponibles</span>
-              <span style="font-weight:700;color:${countColor}">${isFull ? "Agotado" : `${spots} de ${ev.capacity}`}</span>
-            </div>
-            <div class="bar" style="height:6px;border-radius:4px">
-              <div class="bar-fill" style="width:${Math.max(0, spotsPercent)}%;background:${barBg};transition:width .5s ease"></div>
-            </div>
-          </div>
-
-          ${cta}
-        </div>
-      </div>`;
-  },
+  renderCard(ev) { return EventCard(ev); },
 
   renderConfirmModal() {
     if (!this.confirmId) return "";

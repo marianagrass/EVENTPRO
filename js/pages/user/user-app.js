@@ -18,12 +18,17 @@ const UserApp = {
     this.cuposAdjust[eventId] = (this.cuposAdjust[eventId] ?? 0) - 1;
   },
 
-  /* Cupos libres = capacidad - inscritos - ajuste de esta sesión */
+  /* cupos_restantes = capacidad_total - inscritos_actuales
+     inscritos_actuales = inscritos base del evento + inscripciones hechas en esta sesión.
+     Cualquier cambio (register / unregister, o un valor nuevo de ev.registered que
+     llegue del backend / websocket) se refleja en el badge con solo llamar rerender(). */
   getSpots(eventId) {
     const ev = Data.events.find((e) => e.id === eventId);
     if (!ev) return 0;
     if (ev.availability && ev.availability !== "open") return 0;   // pausado/cerrado por el Agente
-    return ev.capacity - ev.registered - (this.cuposAdjust[eventId] ?? 0);
+    const capacidad_total = ev.capacity;
+    const inscritos_actuales = ev.registered + (this.cuposAdjust[eventId] ?? 0);
+    return Math.max(0, capacidad_total - inscritos_actuales);
   },
 
   pages() {

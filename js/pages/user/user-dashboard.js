@@ -13,18 +13,12 @@ const UserDashboardPage = {
       return diff >= 0 && diff <= 7;
     }).length;
 
+    // Tarjetas de resumen: iconos SVG (antes: emojis 🎯 ✅ 📅)
     const stats = [
-      { label: "Disponibles", value: available.length, icon: "🎯", color: "#354024" },
-      { label: "Inscritos",   value: regs.length,      icon: "✅", color: "#4c3d19" },
-      { label: "Esta semana", value: thisWeek,         icon: "📅", color: "#889063" },
-    ].map((s) => `
-      <div class="stat-pill">
-        <span style="font-size:24px">${s.icon}</span>
-        <div>
-          <div class="stat-pill-value" style="color:${s.color}">${s.value}</div>
-          <div style="font-size:12px;color:#889063;margin-top:3px">${s.label}</div>
-        </div>
-      </div>`).join("");
+      { label: "Disponibles", value: available.length, icon: "compass",       color: "#354024" },
+      { label: "Inscritos",   value: regs.length,      icon: "ticket",        color: "#4c3d19" },
+      { label: "Esta semana", value: thisWeek,         icon: "calendar-days", color: "#889063" },
+    ].map(StatCard).join("");
 
     const myList = myEvents.map((ev) => {
       const d = parseDate(ev.date);
