@@ -1,0 +1,65 @@
+/* ==========================================================
+   base.css — Variables, reset y estilos globales
+   ========================================================== */
+
+:root {
+  /* Paleta */
+  --cream:   #f5efe6;
+  --paper:   #faf7f3;
+  --sand:    #cfbb99;
+  --sand-lt: #f0e8da;
+  --border:  #e8ddd0;
+  --olive:   #889063;
+  --forest:  #354024;
+  --forest2: #4a5a33;
+  --brown:   #4c3d19;
+  --gold:    #6b5626;
+  --text-lt: #e5d7c4;
+  --red:     #a05050;
+  --red-bg:  #f5e0e0;
+
+  --font-title: "Fraunces", serif;
+  --font-body:  "Inter", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--cream);
+  color: var(--brown);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p { margin: 0; }
+button { font-family: inherit; }
+img { display: block; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 4px; }
+
+/* Animaciones */
+@keyframes pulse  { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+
+/* Estructura general de la app */
+.app  { display: flex; height: 100%; background-color: var(--cream); }
+.main { flex: 1; overflow-y: auto; min-width: 0; }
+
+.page      { padding: 40px 48px; max-width: var(--w, 1100px); margin: 0 auto; }
+.page-user { padding: 36px 44px; }
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+.eyebrow     { font-size: 12px; color: var(--olive); font-weight: 500; margin-bottom: 4px; }
+.page-title  { font-family: var(--font-title); font-size: 32px; font-weight: 400; color: var(--brown); }
+.page-subtitle { color: var(--olive); font-size: 15px; margin-top: 8px; }
+
+.empty-state       { text-align: center; padding: 80px 0; }
+.empty-state-title { font-family: var(--font-title); font-size: 22px; color: var(--olive); margin-bottom: 8px; }
+.empty-state-text  { font-size: 14px; color: var(--sand); }
+
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row      { display: flex; align-items: center; }
