@@ -1,4 +1,4 @@
-# EventPro — HTML, CSS y JavaScript puro
+# EventPro — HTML, CSS y JavaScript
 
 Sistema de organización de eventos con tres modos: **landing**, **panel de administrador** y **portal de usuario**.
 No usa frameworks, ni Node, ni instalación: solo HTML, CSS y JavaScript.
