@@ -3,9 +3,9 @@
    ========================================================== */
 
 const TASK_COLUMNS = [
-  { key: "pendiente",   label: "Pendiente",   header: "#f5efe6" },
-  { key: "en_progreso", label: "En progreso", header: "#eef5e8" },
-  { key: "completado",  label: "Completado",  header: "#ede8e0" },
+  { key: "pendiente",   label: "Pendiente",   header: "var(--bg)" },
+  { key: "en_progreso", label: "En progreso", header: "var(--tint)" },
+  { key: "completado",  label: "Completado",  header: "var(--tint-2)" },
 ];
 
 const taskBlank = () => ({
@@ -51,9 +51,9 @@ const TasksPage = {
         </div>
         <div class="task-meta">
           <div>${esc(task.eventName.split(" ").slice(0, 3).join(" "))}</div>
-          <div>Responsable: <span style="color:#6b5626;font-weight:500">${esc(task.assignee)}</span></div>
-          ${task.dueDate ? `<div style="color:#6b5626;font-weight:500">Vence: ${parseDate(task.dueDate).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}</div>` : ""}
-          <div><span class="chip" style="background:#f5efe6;color:#889063;padding:2px 8px;border-radius:10px">${esc(task.category)}</span></div>
+          <div>Responsable: <span style="color:var(--gold);font-weight:500">${esc(task.assignee)}</span></div>
+          ${task.dueDate ? `<div style="color:var(--gold);font-weight:500">Vence: ${parseDate(task.dueDate).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}</div>` : ""}
+          <div><span class="chip" style="background:var(--bg);color:var(--muted);padding:2px 8px;border-radius:10px">${esc(task.category)}</span></div>
         </div>
         <div class="task-actions">${moves}${adminActions}</div>
       </div>`;
@@ -94,7 +94,7 @@ const TasksPage = {
       const active = this.filterPriority === p;
       return `
         <button class="pill pill-sm pill-brown ${active ? "active" : ""}" data-click="tasks:priority" data-value="${p}">
-          ${p !== "todas" ? `<span class="pill-dot" style="width:8px;height:8px;background:${active ? "#cfbb99" : PRIORITY[p].dot}"></span>` : ""}
+          ${p !== "todas" ? `<span class="pill-dot" style="width:8px;height:8px;background:${active ? "#b8b2ea" : PRIORITY[p].dot}"></span>` : ""}
           ${p === "todas" ? "Todas" : PRIORITY[p].text}
         </button>`;
     }).join("");
@@ -118,13 +118,13 @@ const TasksPage = {
       : "";
 
     return `
-      <div class="page" style="--w:1200px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Planificación", title: "Tareas", action: addBtn })}
 
         <div class="filters" style="gap:12px;margin-bottom:28px">
           ${searchBox({ id: "tasks-search", placeholder: "Buscar tareas…", value: this.search, handler: "tasks:search", maxWidth: 320 })}
-          <div class="filters">
-            <span style="font-size:13px;color:#889063;font-weight:500">Prioridad:</span>
+          <div class="filters scroll-x">
+            <span style="font-size:13px;color:var(--muted);font-weight:500">Prioridad:</span>
             ${priorityPills}
           </div>
         </div>

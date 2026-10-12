@@ -1,0 +1,180 @@
+/* ==========================================================
+   responsive.css — Paneles internos (Admin · Usuario · Agente) en tablet y móvil
+   Puntos de quiebre (mobile-first en espíritu; se escribe como max-width porque los estilos base son de escritorio):
+     < 1024px  menú lateral → panel off-canvas + barra superior
+     < 1100px  rejillas de 2–4 columnas → 2 columnas / 1 columna
+     <  768px  móvil: 1 columna, botones de ≥ 44px, tablas con scroll interno, modales a pantalla casi completa
+   El Home público tiene sus reglas en guest.css / search.css / hero-carousel.css / footer.css.
+   ========================================================== */
+
+/* ---------- Elementos que solo existen en móvil ---------- */
+.appbar, .sidebar-close, .shell-backdrop { display: none; }
+.card-head.cal-head { padding: 20px 24px; }
+.table-scroll { width: 100%; }
+
+/* Fila de píldoras con scroll horizontal táctil (ver reglas < 768px) */
+.scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+.scroll-x::-webkit-scrollbar { display: none; }
+
+/* ==========================================================
+   < 1024px — menú off-canvas
+   ========================================================== */
+@media (max-width: 1023.98px) {
+  .appbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 30; height: var(--appbar-h); padding: 0 var(--gutter-x);
+    background: var(--header-solid); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+  .appbar-btn { width: 44px; height: 44px; margin-left: -10px; border: 0; border-radius: 12px; background: transparent; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+  .appbar-btn:hover { background: var(--lilac-lt); }
+  .appbar-logo { width: 32px; height: 32px; border-radius: 10px; }
+  .appbar-logo span { font-size: 16px; }
+  .appbar-title { flex: 1; min-width: 0; font-family: var(--font-title); font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .appbar .theme-toggle { margin-right: -4px; }
+
+  .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 70; width: min(86vw, 310px); min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain;
+    transform: translateX(-104%); visibility: hidden; border-right: 0; transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s linear .3s;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .sidebar .nav { flex: 1 0 auto; }
+  .shell-backdrop { display: block; position: fixed; inset: 0; z-index: 60; background: rgba(12,10,32,.55); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility 0s linear .25s; }
+  .app.nav-open .sidebar { transform: none; visibility: visible; box-shadow: 20px 0 60px rgba(0,0,0,.35); transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+  .app.nav-open .shell-backdrop { opacity: 1; visibility: visible; transition: opacity .25s ease, visibility 0s; }
+  .app.nav-open .main { overflow: hidden; }                    /* no se mueve el contenido de atrás */
+  .sidebar-close { display: grid; position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border: 0; border-radius: 12px; place-items: center;
+    background: var(--lilac-lt); color: var(--text); cursor: pointer; z-index: 2; }
+  .sidebar-brand { padding-right: 64px; }
+  .nav-item { min-height: 48px; }
+  .sidebar-footer { padding-bottom: 20px; }
+  .sidebar-footer .btn { min-height: 46px; }
+
+  /* El chat ocupa el alto restante (descuenta la barra superior) */
+  .chat { height: calc(100vh - var(--appbar-h)); height: calc(100dvh - var(--appbar-h)); }
+}
+
+/* ==========================================================
+   < 1100px — rejillas
+   ========================================================== */
+@media (max-width: 1099.98px) {
+  .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* minmax(0, 1fr): la columna puede encogerse por debajo de su contenido (tablas, textos largos) en vez de ensanchar la página */
+  .grid-dash, .grid-profile, .grid-calendar { grid-template-columns: minmax(0, 1fr); }
+  .col-stack, .side-col { min-width: 0; }
+  .grid-calendar .side-col { flex-direction: row; flex-wrap: wrap; }
+  .grid-calendar .side-col > * { flex: 1 1 260px; }
+}
+
+/* ==========================================================
+   < 768px — móvil
+   ========================================================== */
+@media (max-width: 767.98px) {
+  .page { padding-bottom: 32px; }
+  .page-header { align-items: flex-start; margin-bottom: 20px; }
+  .page-header .btn { width: 100%; min-height: 48px; }          /* «Crear evento», «Nueva tarea»… a lo ancho */
+  .page-title { font-size: clamp(26px, 7.4vw, 32px); }
+  .page-subtitle { font-size: 14px; }
+
+  .grid-kpi { gap: 12px; margin-bottom: 24px; }
+  .kpi { padding: 16px; }
+  .kpi-value { font-size: 30px; }
+  .grid-3 { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .grid-cards { grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 320px), 100%), 1fr)); gap: 16px; }
+  .grid-cards, .grid-dash, .grid-calendar, .grid-profile { gap: 16px; }
+  .form-grid-2 { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .ev-card .form-grid-2 { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ev-actions .btn { min-height: 44px; }
+  .col-stack { gap: 16px; }
+  .card-head { padding: 16px; }
+  .card-pad { padding: 18px; }
+  .dash-row { flex-wrap: wrap; padding: 14px 16px; gap: 12px; }
+
+  /* Filtros: la búsqueda a todo el ancho y las píldoras en UNA fila con scroll táctil */
+  .filters-stack { gap: 10px; margin-bottom: 20px; }
+  .filters { gap: 10px; }
+  .search { max-width: none !important; }
+  .scroll-x { flex-wrap: nowrap !important; overflow-x: auto; white-space: nowrap; width: calc(100% + var(--gutter-x) * 2); margin: 0 calc(var(--gutter-x) * -1);
+    padding: 2px var(--gutter-x) 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 28px), transparent 100%); }
+  .scroll-x > * { flex: 0 0 auto; scroll-snap-align: start; }
+  .scroll-x { scroll-padding-inline: var(--gutter-x); }
+
+  /* Tablas: scroll horizontal dentro de su tarjeta (la página no se desborda) */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll .table { min-width: 620px; }
+  .table th, .table td { padding: 12px 14px; }
+
+  /* Modales: casi a pantalla completa; los de formulario suben desde abajo */
+  .modal-backdrop { padding: 12px; align-items: center; }
+  .modal:not(.modal-confirm) { align-self: flex-end; max-width: none !important; width: 100%; max-height: 92vh; max-height: 92dvh; padding: 24px 18px max(20px, env(safe-area-inset-bottom));
+    border-radius: 24px 24px 18px 18px; }
+  .modal-title { font-size: 22px; margin-bottom: 18px; }
+  .modal-confirm { padding: 26px 20px; max-width: 100%; }
+  .modal-actions, .modal-form-actions { flex-direction: column-reverse; gap: 10px; margin-top: 20px; }
+  .modal-actions .btn, .modal-form-actions .btn { width: 100%; flex: none; min-height: 48px; }
+
+  /* Calendario: celdas compactas (solo barras de color) */
+  .cal-cell { min-height: 58px; padding: 4px 3px; }
+  .cal-day { width: 24px; height: 24px; font-size: 12px; margin-bottom: 3px; }
+  .cal-event { padding: 2px 4px; border-radius: 4px; }
+  .cal-event-name { font-size: 9px; }
+  .cal-event-meta { display: none; }
+  .cal-more { font-size: 9px; padding-left: 2px; }
+  .cal-weekdays div { font-size: 11px; padding: 10px 0; }
+  .cal-month { font-size: 17px; }
+  .card-head.cal-head { padding: 14px 12px; }
+
+  /* Kanban y tarjetas de tarea */
+  .task-actions .btn { min-height: 40px; flex: 1 1 auto; }
+
+  /* Chat */
+  .chat-header { padding: 14px 16px; }
+  .chat-logo { width: 42px; height: 42px; border-radius: 13px; }
+  .chat-messages { padding: 16px; gap: 14px; }
+  .bubble { font-size: 14px; }
+  .suggestions { padding: 0 16px 12px; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .suggestions::-webkit-scrollbar { display: none; }
+  .suggestion { flex: 0 0 auto; min-height: 44px; }
+  .chat-footer { padding: 10px 16px max(14px, env(safe-area-inset-bottom)); }
+  .chat-hint { display: none; }
+  .send-btn { width: 50px; height: 50px; }
+
+  /* Portal de usuario */
+  .hero { padding: 26px 20px; border-radius: 22px; margin-bottom: 20px; }
+  .hero .hero-title { font-size: 26px; }
+  .hero .hero-text { font-size: 14px; margin-bottom: 18px; }
+  .hero .row { flex-direction: column; align-items: stretch; }
+  .hero-btn { width: 100%; min-height: 48px; }
+  .stat-pill { padding: 14px 16px; }
+  .section-head { margin-bottom: 12px; }
+  .section-head h2 { font-size: 17px; }
+  .my-row { flex-wrap: wrap; padding: 14px; gap: 12px; }
+  .my-row > .btn { width: 100%; min-height: 46px; }
+  .my-card { flex-direction: column; padding: 18px; gap: 14px; }
+  .my-card > .btn { width: 100%; min-height: 48px; }
+  .past-card { padding: 14px; gap: 12px; }
+  .uev-img { height: 170px; }
+  .uev-body .btn, .uev-body .cta-btn, .feat-card .cta-btn { min-height: 48px; }
+  .registered-tag { min-height: 48px; }
+  .toast { padding: 12px 14px; }
+  .empty-state { padding: 56px 0; }
+
+  /* Perfil */
+  .role-summary { padding: 14px; }
+  .toggle button { min-height: 46px; }
+}
+
+/* ==========================================================
+   Táctil y móvil: objetivos de toque ≥ 44px y campos de 16px (evita el zoom de iOS al enfocar)
+   ========================================================== */
+@media (max-width: 767.98px), (pointer: coarse) {
+  .btn, .cta-btn, .pill, .icon-btn, .nav-item, .btn-light { min-height: 44px; }
+  .btn-sm { min-height: 44px; }
+  .btn-xs { min-height: 40px; padding-left: 12px; padding-right: 12px; }
+  .pill { padding-top: 10px; padding-bottom: 10px; }
+  .input, select.input { min-height: 48px; font-size: 16px; }
+  .icon-btn { width: 44px; height: 44px; }
+  .toggle button, .theme-toggle { min-height: 44px; }
+  .hero-arrow, .hero-dot { touch-action: manipulation; }
+}
+@media (hover: none) {
+  .card-hover:hover, .g-prop:hover, .g-cat:hover, .cf-pill:hover { transform: none; }   /* sin "saltos" al tocar en pantallas táctiles */
+}

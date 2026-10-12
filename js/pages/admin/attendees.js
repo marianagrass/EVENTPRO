@@ -40,14 +40,14 @@ const AttendeesPage = {
             <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${avatarColor(a.name)}">${esc(initials(a.name))}</div>
             <div>
               <div style="font-size:14px;font-weight:500">${esc(a.name)}</div>
-              <div style="font-size:12px;color:#889063">${esc(a.email)}</div>
-              <div style="font-size:12px;color:#cfbb99">${esc(a.phone)}</div>
+              <div style="font-size:12px;color:var(--muted)">${esc(a.email)}</div>
+              <div style="font-size:12px;color:var(--muted-2)">${esc(a.phone)}</div>
             </div>
           </div>
         </td>
         <td style="font-size:13px;max-width:200px"><div class="ellipsis">${esc(a.eventName)}</div></td>
         <td>${statusBadge(a.status)}</td>
-        <td style="font-size:13px;color:#889063">${parseDate(a.registeredAt).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</td>
+        <td style="font-size:13px;color:var(--muted)">${parseDate(a.registeredAt).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</td>
         <td>${actions}</td>
       </tr>`;
   },
@@ -80,9 +80,9 @@ const AttendeesPage = {
     const list = this.filtered();
 
     const stats = [
-      { label: "Total registrados", value: all.length,                                          color: "#4c3d19" },
-      { label: "Confirmados",       value: all.filter((a) => a.status === "confirmado").length, color: "#354024" },
-      { label: "Pendientes",        value: all.filter((a) => a.status === "pendiente").length,  color: "#889063" },
+      { label: "Total registrados", value: all.length,                                          color: "var(--text)" },
+      { label: "Confirmados",       value: all.filter((a) => a.status === "confirmado").length, color: "var(--primary-fg)" },
+      { label: "Pendientes",        value: all.filter((a) => a.status === "pendiente").length,  color: "var(--muted)" },
     ].map((s) => `
       <div class="kpi" style="padding:20px 24px">
         <div class="kpi-label" style="margin-bottom:8px">${s.label}</div>
@@ -99,24 +99,24 @@ const AttendeesPage = {
       : "";
 
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Registro", title: "Asistentes", action: addBtn })}
 
         <div class="grid-3" style="margin-bottom:28px">${stats}</div>
 
         <div class="filters" style="gap:12px;margin-bottom:20px">
           ${searchBox({ id: "attendees-search", placeholder: "Buscar por nombre, email o evento…", value: this.search, handler: "attendees:search" })}
-          <div class="filters">${pills}</div>
+          <div class="filters scroll-x">${pills}</div>
         </div>
 
         <div class="card">
-          <table class="table">
+          <div class="table-scroll"><table class="table">
             <thead><tr>${["Asistente", "Evento", "Estado", "Registrado el", "Acciones"].map((h) => `<th>${h}</th>`).join("")}</tr></thead>
             <tbody>${list.map((a) => this.renderRow(a)).join("")}</tbody>
-          </table>
+          </table></div>
           ${list.length === 0 ? `
             <div style="text-align:center;padding:60px 0">
-              <div style="font-family:var(--font-title);font-size:20px;color:#889063">Sin resultados</div>
+              <div style="font-family:var(--font-title);font-size:20px;color:var(--muted)">Sin resultados</div>
             </div>` : ""}
         </div>
 

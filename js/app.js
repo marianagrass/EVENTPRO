@@ -34,11 +34,11 @@ const App = {
     if (this.mode === "guest") return GuestHome.render();
     if (this.mode === "manager") return ManagerApp.render();
     if (this.mode === "user") return UserApp.render();
-    return `
-      <div class="app">
-        ${AdminSidebar.render()}
-        <main class="main">${this.currentPage().render()}</main>
-      </div>`;
+    return AppShell.render({
+      sidebar: AdminSidebar.render(),
+      page: this.currentPage().render(),
+      title: navTitle(ADMIN_NAV, this.adminView),
+    });
   },
 
   /**

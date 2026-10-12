@@ -10,17 +10,17 @@ const TYPE_LABEL = {
 
 // Color sólido por tipo de evento
 const TYPE_COLOR = {
-  academico: "#354024", institucional: "#4c3d19", investigacion: "#4a5a33",
-  cultural: "#889063", deportivo: "#6b5626",
+  academico: "#6a2cff", institucional: "#2563eb", investigacion: "#087f70",
+  cultural: "#d61f69", deportivo: "#cc4100",
 };
 
 // Paleta completa por tipo (usada en calendario y portal de usuario)
 const TYPE_STYLE = {
-  academico:     { bg: "#354024", gradient: "linear-gradient(135deg, #354024, #4a5a33)" },
-  institucional: { bg: "#4c3d19", gradient: "linear-gradient(135deg, #4c3d19, #6b5626)" },
-  investigacion: { bg: "#2d4a3e", gradient: "linear-gradient(135deg, #2d4a3e, #4a7a6a)" },
-  cultural:      { bg: "#6b4c1e", gradient: "linear-gradient(135deg, #6b4c1e, #a07040)" },
-  deportivo:     { bg: "#3a4c1e", gradient: "linear-gradient(135deg, #3a4c1e, #5a7830)" },
+  academico:     { bg: "#6a2cff", gradient: "linear-gradient(135deg, #6a2cff, #8450ff)" },
+  institucional: { bg: "#2563eb", gradient: "linear-gradient(135deg, #2563eb, #3f74ec)" },
+  investigacion: { bg: "#087f70", gradient: "linear-gradient(135deg, #087f70, #0e9482)" },
+  cultural:      { bg: "#d61f69", gradient: "linear-gradient(135deg, #d61f69, #e8407f)" },
+  deportivo:     { bg: "#cc4100", gradient: "linear-gradient(135deg, #cc4100, #df5405)" },
 };
 
 // Imagen por defecto según el tipo de evento
@@ -39,10 +39,29 @@ const STATUS_TEXT = {
 };
 
 const PRIORITY = {
-  alta:  { text: "Alta",  dot: "#4c3d19" },
-  media: { text: "Media", dot: "#889063" },
-  baja:  { text: "Baja",  dot: "#cfbb99" },
+  alta:  { text: "Alta",  dot: "#e5365a" },
+  media: { text: "Media", dot: "#ff8a1f" },
+  baja:  { text: "Baja",  dot: "#2b6bff" },
 };
+
+/* ---------- Slides del carrusel del Home público ----------
+   - eventId: enlaza el slide con un evento (toma fecha, lugar y foto de Data.events
+     y activa los botones "Inscribirme" / "Ver detalles", que piden iniciar sesión).
+   - image (opcional): foto propia, por ejemplo "img/hero/concierto.jpg" (mejor 1600×900 o más).
+   - highlight: palabra(s) del título que se pintan con el degradado de color.
+   Sin eventId, el slide es de marca y muestra "Crear cuenta" / "Ver eventos". */
+const HERO_SLIDES = [
+  { eventId: "e4", tag: "Concierto · Cultural", title: "Vive la música andina en vivo", highlight: "música andina",
+    text: "Una tarde de ritmos, tradición y buena energía con toda la comunidad universitaria." },
+  { eventId: "e5", tag: "Deportes · En curso", title: "Juega, alienta y gana con tu facultad", highlight: "gana",
+    text: "El torneo interfacultades donde el campus se llena de camisetas, barras y emoción." },
+  { eventId: "e1", tag: "Académico · Destacado", title: "Ideas que mueven universidades", highlight: "mueven",
+    text: "Conferencias, talleres y networking con quienes están transformando la academia." },
+  { eventId: "e6", tag: "Arte · Exposición", title: "Arte contemporáneo para sentir", highlight: "sentir",
+    text: "Recorre una muestra que mezcla creatividad, color y miradas jóvenes." },
+  { eventId: "e2", tag: "Institucional · Celebración", title: "Celebra el logro de toda una carrera", highlight: "logro",
+    text: "Una ceremonia para compartir con familia y amigos el gran día de los nuevos ingenieros." },
+];
 
 const Data = {
   events: [
@@ -76,6 +95,7 @@ const Data = {
     capacity: 1200, registered: 892, status: "planificado",
     budget: 120000000, spent: 55300000, coordinator: "Carmen López",
     description: "Festival con agrupaciones de música andina colombiana.",
+    categories: ["cultura", "fiestas"],   // un evento puede estar en varias categorías del Home
     image: "https://images.unsplash.com/photo-1719241368157-7c78535f3a92?w=600&q=80",
   },
   {
@@ -158,3 +178,20 @@ Data.attendees.forEach((a) => { a.checkedInAt = null; });
   }));
   Data.attendees.find((a) => a.id === "a10").checkedInAt = "2026-08-22T07:05:00";
 })();
+
+/* ---------- Categorías del Home (píldoras de filtro y tarjetas de categoría) ----------
+   Cada evento pertenece a las categorías cuyo `types` incluya su tipo (ev.type), o a las que
+   liste a mano en ev.categories (ej.: ["cultura", "fiestas"]). "Fiestas" no tiene tipo propio:
+   se asigna con ev.categories. imageEvent: usa la foto de ese evento para la tarjeta de categoría. */
+const HOME_CATEGORIES = [
+  { id: "academico", label: "Académico",       types: ["academico", "investigacion"], color: TYPE_STYLE.academico.bg,     gradient: TYPE_STYLE.academico.gradient,     imageType: "academico" },
+  { id: "deportes",  label: "Deportes",        types: ["deportivo"],                  color: TYPE_STYLE.deportivo.bg,     gradient: TYPE_STYLE.deportivo.gradient,     imageType: "deportivo" },
+  { id: "cultura",   label: "Cultura",         types: ["cultural"],                   color: TYPE_STYLE.cultural.bg,      gradient: TYPE_STYLE.cultural.gradient,      imageEvent: "e6" },
+  { id: "fiestas",   label: "Fiestas",         types: [],                             color: "#d61f69",                   gradient: "linear-gradient(135deg, #d61f69, #cc4100)", imageEvent: "e4" },
+  { id: "comunidad", label: "Comunidad UCEVA", types: ["institucional"],              color: TYPE_STYLE.institucional.bg, gradient: TYPE_STYLE.institucional.gradient, imageType: "institucional" },
+];
+
+function eventCategories(ev) {
+  if (Array.isArray(ev.categories)) return ev.categories;
+  return HOME_CATEGORIES.filter((c) => c.types.includes(ev.type)).map((c) => c.id);
+}

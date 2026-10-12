@@ -58,23 +58,23 @@ const ProfilePage = {
             <div class="avatar" style="width:34px;height:34px;font-size:12px;font-weight:700;background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${u.avatar}</div>
             <div>
               <div style="font-size:13px;font-weight:500">${esc(u.name)}</div>
-              <div style="font-size:12px;color:#cfbb99">${esc(u.email)}</div>
+              <div style="font-size:12px;color:var(--muted-2)">${esc(u.email)}</div>
             </div>
           </div>
         </td>
-        <td style="font-size:13px;color:#889063">${u.dept}</td>
-        <td><span class="badge" style="font-size:12px;padding:4px 12px;background:${u.role === "admin" ? "#e8f0e0" : "#f5efe6"};color:${u.role === "admin" ? "#354024" : "#889063"}">
+        <td style="font-size:13px;color:var(--muted)">${u.dept}</td>
+        <td><span class="badge" style="font-size:12px;padding:4px 12px;background:${u.role === "admin" ? "var(--tint)" : "var(--bg)"};color:${u.role === "admin" ? "var(--primary-fg)" : "var(--muted)"}">
           ${u.role === "admin" ? "Administrador" : "Usuario"}</span></td>
       </tr>`).join("");
 
     const perms = PERMISSIONS[role].map((p) => `
       <div class="row" style="align-items:flex-start;gap:10px">
-        <span style="font-size:13px;font-weight:700;margin-top:1px;color:${p.ok ? "#354024" : "#cfbb99"}">${p.ok ? "✓" : "✗"}</span>
-        <span style="font-size:13px;color:${p.ok ? "#4c3d19" : "#cfbb99"}">${p.text}</span>
+        <span style="font-size:13px;font-weight:700;margin-top:1px;color:${p.ok ? "var(--primary-fg)" : "var(--lilac)"}">${p.ok ? "✓" : "✗"}</span>
+        <span style="font-size:13px;color:${p.ok ? "var(--text)" : "var(--lilac)"}">${p.text}</span>
       </div>`).join("");
 
     return `
-      <div class="page" style="--w:1000px">
+      <div class="page" style="--w:1200px">
         <div style="margin-bottom:36px">
           <div class="eyebrow">Cuenta</div>
           <h1 class="page-title">Perfil de usuario</h1>
@@ -84,12 +84,12 @@ const ProfilePage = {
           <div class="col-stack">
             <div class="card" style="padding:28px 28px 24px">
               <div class="row" style="gap:20px;margin-bottom:28px">
-                <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:#354024;color:#cfbb99">SN</div>
+                <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:#6a2cff;color:#b8b2ea">SN</div>
                 <div>
-                  <div style="font-family:var(--font-title);font-size:22px;font-weight:500;line-height:1.2">Sofía Navarro</div>
-                  <div style="font-size:14px;color:#889063;margin-top:4px">sofia@eventpro.es</div>
+                  <div style="font-family:var(--font-title);font-size:22px;font-weight:700;line-height:1.2">Sofía Navarro</div>
+                  <div style="font-size:14px;color:var(--muted);margin-top:4px">sofia@eventpro.es</div>
                   <div style="margin-top:8px">
-                    <span class="badge" style="font-size:12px;font-weight:600;padding:4px 12px;background:${isAdmin ? "#354024" : "#f0e8da"};color:${isAdmin ? "#cfbb99" : "#889063"}">
+                    <span class="badge" style="font-size:12px;font-weight:600;padding:4px 12px;background:${isAdmin ? "var(--primary)" : "var(--lilac-lt)"};color:${isAdmin ? "#fff" : "var(--muted)"}">
                       ${isAdmin ? "Administrador" : "Usuario"}</span>
                   </div>
                 </div>
@@ -101,21 +101,21 @@ const ProfilePage = {
             <div class="card">
               <div style="padding:20px 24px 16px;border-bottom:1px solid var(--cream)">
                 <h2 style="font-size:16px;font-weight:600">Equipo</h2>
-                <p style="margin-top:4px;font-size:13px;color:#889063">
+                <p style="margin-top:4px;font-size:13px;color:var(--muted)">
                   ${isAdmin ? "Como administrador puedes cambiar los roles del equipo." : "Solo los administradores pueden cambiar roles."}
                 </p>
               </div>
-              <table class="table table-compact">
+              <div class="table-scroll"><table class="table table-compact">
                 <thead><tr><th>Miembro</th><th>Departamento</th><th>Rol</th></tr></thead>
                 <tbody>${team}</tbody>
-              </table>
+              </table></div>
             </div>
           </div>
 
           <div class="col-stack">
             <div class="card card-pad">
               <h3 style="margin-bottom:6px;font-size:16px;font-weight:600">Tu rol actual</h3>
-              <p style="margin-bottom:20px;font-size:13px;color:#889063;line-height:1.5">
+              <p style="margin-bottom:20px;font-size:13px;color:var(--muted);line-height:1.5">
                 Cambia entre administrador y usuario para ver la diferencia de acceso.
               </p>
               <div class="toggle">
@@ -123,12 +123,12 @@ const ProfilePage = {
                 <button class="${!isAdmin ? "active" : ""}" data-click="profile:setRole" data-role="user">Usuario</button>
               </div>
               <div class="role-summary ${isAdmin ? "is-admin" : ""}">
-                <div class="role-summary-icon" style="background:${isAdmin ? "#354024" : "#cfbb99"}">
-                  ${isAdmin ? icon("shield", 18, { color: "#cfbb99" }) : icon("user", 18, { color: "#4c3d19" })}
+                <div class="role-summary-icon" style="background:${isAdmin ? "var(--primary-fg)" : "var(--lilac)"}">
+                  ${isAdmin ? icon("shield", 18, { color: "var(--lilac)" }) : icon("user", 18, { color: "var(--text)" })}
                 </div>
                 <div>
                   <div style="font-size:15px;font-weight:600">${isAdmin ? "Acceso total" : "Acceso limitado"}</div>
-                  <div style="font-size:12px;color:#889063">${isAdmin ? "Puedes gestionar todo" : "Solo tus eventos asignados"}</div>
+                  <div style="font-size:12px;color:var(--muted)">${isAdmin ? "Puedes gestionar todo" : "Solo tus eventos asignados"}</div>
                 </div>
               </div>
             </div>

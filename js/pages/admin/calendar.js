@@ -53,16 +53,16 @@ const CalendarPage = {
     const title = parseDate(this.selected).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 
     const body = evs.length === 0
-      ? `<p style="font-size:13px;color:#cfbb99">Sin eventos este día</p>`
+      ? `<p style="font-size:13px;color:var(--muted-2)">Sin eventos este día</p>`
       : evs.map((ev) => `
           <div class="cal-detail">
             <div style="background:${TYPE_STYLE[ev.type].gradient};padding:8px 12px">
-              <div style="font-size:12px;font-weight:700;color:#e5d7c4">${TYPE_LABEL[ev.type]}</div>
+              <div style="font-size:12px;font-weight:700;color:#f4f1ff">${TYPE_LABEL[ev.type]}</div>
               <div style="font-size:13px;font-weight:700;color:#fff;margin-top:2px;line-height:1.3">${esc(ev.name)}</div>
             </div>
-            <div style="padding:8px 12px;background:#faf7f3">
-              <div style="font-size:12px;color:#889063">${esc(ev.time)} · ${esc(ev.location.split(",")[0])}</div>
-              <div style="font-size:12px;color:#cfbb99;margin-top:3px">${ev.registered} / ${ev.capacity} asistentes</div>
+            <div style="padding:8px 12px;background:var(--paper)">
+              <div style="font-size:12px;color:var(--muted)">${esc(ev.time)} · ${esc(ev.location.split(",")[0])}</div>
+              <div style="font-size:12px;color:var(--muted-2);margin-top:3px">${ev.registered} / ${ev.capacity} asistentes</div>
             </div>
           </div>`).join("");
 
@@ -78,8 +78,8 @@ const CalendarPage = {
         <div class="next-item" data-click="calendar:set" data-date="${ev.date}">
           <div class="next-bar" style="background:${TYPE_STYLE[ev.type].gradient}"></div>
           <div>
-            <div style="font-size:13px;font-weight:600;color:#4c3d19;line-height:1.3">${esc(ev.name.split(" ").slice(0, 4).join(" "))}</div>
-            <div style="font-size:11px;color:#889063;margin-top:2px">
+            <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3">${esc(ev.name.split(" ").slice(0, 4).join(" "))}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">
               ${parseDate(ev.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · ${esc(ev.time)}
             </div>
           </div>
@@ -97,12 +97,12 @@ const CalendarPage = {
       </div>`).join("");
 
     return `
-      <div class="page" style="--w:1180px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Vista", title: "Calendario" })}
 
         <div class="grid-calendar">
           <div class="card">
-            <div class="card-head" style="padding:20px 24px">
+            <div class="card-head cal-head">
               <button class="icon-btn" data-click="calendar:prev">${icon("left", 16)}</button>
               <h2 class="cal-month">${MONTHS[this.month]} ${this.year}</h2>
               <button class="icon-btn" data-click="calendar:next">${icon("right", 16)}</button>

@@ -4,18 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="EventPro: sistema de organización y gestión de eventos.">
-  <title>EventPro</title>
+  <!-- Aplica el tema guardado ANTES de pintar la página (evita el parpadeo blanco en modo oscuro) -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("eventpro-theme");
+        if (t !== "light" && t !== "dark") t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
 
-  <!-- Fuentes de Google (necesitan internet; si no hay, el navegador usa fuentes del sistema) -->
+  <title>EventPro</title>
+  <meta name="theme-color" content="#6a2cff">
+
+  <!-- Fuentes de Google: Bricolage Grotesque (títulos) + Plus Jakarta Sans (texto). Sin internet se usan fuentes del sistema -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400..800&display=swap">
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/guest.css">
+  <link rel="stylesheet" href="css/hero-carousel.css">
+  <link rel="stylesheet" href="css/footer.css">
+  <link rel="stylesheet" href="css/search.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/theme.css">
 </head>
 <body>
   <div id="root"></div>
@@ -23,9 +40,16 @@
   <!-- Scripts: el orden importa (datos → utilidades → componentes → páginas → app) -->
   <script src="js/data.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/core/theme.js"></script>
   <script src="js/core/session.js"></script>
 
+  <script src="js/components/theme-toggle.js"></script>
+  <script src="js/components/search-bar.js"></script>
+  <script src="js/components/category-filters.js"></script>
+  <script src="js/components/app-shell.js"></script>
   <script src="js/components/sidebars.js"></script>
+  <script src="js/components/footer.js"></script>
+  <script src="js/components/public-layout.js"></script>
 
   <script src="js/pages/landing.js"></script>
   <script src="js/pages/agent.js"></script>
@@ -43,6 +67,7 @@
   <script src="js/pages/user/user-my-events.js"></script>
   <script src="js/pages/user/user-profile.js"></script>
 
+  <script src="js/pages/public/hero-carousel.js"></script>
   <script src="js/pages/public/guest-home.js"></script>
   <script src="js/pages/manager/manager.js"></script>
 

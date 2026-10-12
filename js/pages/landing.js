@@ -49,14 +49,14 @@ const LandingPage = {
 
           <div class="landing-cards">
             <button class="mode-card mode-card-admin" data-click="app:goAdmin">
-              <div class="mode-icon">${icon("shield", 22, { color: "#cfbb99" })}</div>
+              <div class="mode-icon">${icon("shield", 22, { color: "var(--lilac)" })}</div>
               <div class="mode-title">Administrador</div>
               <p class="mode-text">Gestiona eventos, asistentes, tareas y presupuestos.</p>
               <div class="mode-cta">Entrar como Admin ${icon("right", 14, { width: 2.5 })}</div>
             </button>
 
             <button class="mode-card mode-card-user" data-click="app:goUser">
-              <div class="mode-icon">${icon("user", 22, { color: "#e5d7c4" })}</div>
+              <div class="mode-icon">${icon("user", 22, { color: "#f4f1ff" })}</div>
               <div class="mode-title">Usuario</div>
               <p class="mode-text">Explora eventos, inscríbete y gestiona tu agenda.</p>
               <div class="mode-cta">Explorar eventos ${icon("right", 14, { width: 2.5 })}</div>

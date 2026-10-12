@@ -79,8 +79,8 @@ const AgentPage = {
   renderMessage(msg) {
     const isUser = msg.role === "user";
     const avatar = isUser
-      ? `<div class="chat-avatar" style="background:#cfbb99;color:#4c3d19;font-size:13px;font-weight:700">${this.isAdmin() ? "SN" : "CM"}</div>`
-      : `<div class="chat-avatar chat-avatar-bot">${icon("chat", 16, { color: "#e5d7c4" })}</div>`;
+      ? `<div class="chat-avatar" style="background:#b8b2ea;color:#16123b;font-size:13px;font-weight:700">${this.isAdmin() ? "SN" : "CM"}</div>`
+      : `<div class="chat-avatar chat-avatar-bot">${icon("chat", 16, { color: "#f4f1ff" })}</div>`;
 
     return `
       <div class="msg ${isUser ? "user" : ""}">
@@ -98,7 +98,7 @@ const AgentPage = {
 
     const typing = s.loading ? `
       <div class="msg">
-        <div class="chat-avatar chat-avatar-bot">${icon("chat", 16, { color: "#e5d7c4" })}</div>
+        <div class="chat-avatar chat-avatar-bot">${icon("chat", 16, { color: "#f4f1ff" })}</div>
         <div class="bubble agent typing">
           ${[0, 1, 2].map((i) => `<span style="animation:bounce 1.2s ${i * 0.2}s infinite"></span>`).join("")}
         </div>
@@ -113,12 +113,12 @@ const AgentPage = {
       <div class="chat">
         <div class="chat-header">
           <div class="row" style="gap:16px">
-            <div class="chat-logo">${icon("chat", 24, { color: "#e5d7c4", width: 1.8 })}</div>
+            <div class="chat-logo">${icon("chat", 24, { color: "#f4f1ff", width: 1.8 })}</div>
             <div>
-              <div style="font-family:var(--font-title);font-size:22px;font-weight:600">Asistente EventPro</div>
+              <div style="font-family:var(--font-title);font-size:22px;font-weight:700">Asistente EventPro</div>
               <div class="row" style="gap:6px;margin-top:3px">
-                <span class="dot" style="width:8px;height:8px;background:#4a5a33"></span>
-                <span style="font-size:12px;color:#889063">En línea · Responde al instante</span>
+                <span class="dot" style="width:8px;height:8px;background:#2b6bff"></span>
+                <span style="font-size:12px;color:var(--muted)">En línea · Responde al instante</span>
               </div>
             </div>
           </div>

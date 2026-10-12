@@ -1,0 +1,80 @@
+/* ==========================================================
+   search.css — SearchBar y CategoryFilters + tarjeta de búsqueda del Home
+   ========================================================== */
+
+/* ----- Tarjeta que flota sobre el borde inferior del hero ----- */
+.g-search-wrap { position: relative; z-index: 6; margin-top: -64px; padding: 0 var(--gutter) 56px; scroll-margin-top: 90px; }
+.g-search-card { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 28px 32px 26px;
+  box-shadow: 0 30px 70px -30px rgba(22,18,59,.5); }
+.g-search-head h2 { font-size: 24px; font-weight: 800; letter-spacing: -.025em; color: var(--text); }
+.g-search-head p  { margin-top: 4px; font-size: 14px; color: var(--muted); }
+.g-search-cats { display: flex; align-items: center; gap: 16px; }
+.g-search-label { flex-shrink: 0; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* ----- SearchBar ----- */
+.sb { display: flex; gap: 12px; margin: 18px 0 20px; }
+.sb-field { position: relative; flex: 1; min-width: 0; }
+.sb-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--primary-fg); pointer-events: none; }
+.sb-input { width: 100%; height: 60px; padding: 0 56px 0 56px; border-radius: 18px; border: 2px solid var(--border); background: var(--paper);
+  font: 500 17px var(--font-body); color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
+.sb-input::placeholder { color: var(--muted); opacity: .8; }
+.sb-input:hover { border-color: var(--lilac); }
+.sb-input:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 5px rgba(122,67,255,.2); }
+.sb-clear { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border-radius: 50%; border: 0;
+  display: grid; place-items: center; cursor: pointer; background: var(--lilac-lt); color: var(--muted); transition: background .15s, color .15s; }
+.sb-clear:hover { background: var(--primary); color: #fff; }
+.sb-clear[hidden] { display: none; }
+.sb-submit { height: 60px; padding: 0 34px; border-radius: 18px; font-size: 16px; }
+
+/* ----- CategoryFilters (píldoras) ----- */
+.cf { display: flex; flex-wrap: wrap; gap: 10px; }
+.cf-pill { --c: var(--primary); --g: var(--grad-primary); display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px 10px 14px;
+  border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: 700 14px var(--font-body); cursor: pointer;
+  transition: transform .15s, box-shadow .2s, border-color .15s, background .15s, color .15s; }
+.cf-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; transition: background .15s; }
+.cf-count { min-width: 22px; padding: 2px 7px; border-radius: 999px; background: var(--lilac-lt); color: var(--gold); font-size: 12px; font-weight: 800; text-align: center; }
+.cf-pill:hover { border-color: var(--c); transform: translateY(-2px); }
+.cf-pill:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+.cf-pill.is-active { background: var(--g); border-color: transparent; color: #fff; box-shadow: 0 12px 24px -10px var(--c); }
+.cf-pill.is-active .cf-dot { background: #fff; }
+.cf-pill.is-active .cf-count { background: rgba(255,255,255,.28); color: #fff; }
+.cf-pill[data-empty="true"] { opacity: .55; }
+
+/* ----- Resultados ----- */
+.g-results-info { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
+.g-results-info b { color: var(--text); }
+.g-link { border: 0; background: none; padding: 0; cursor: pointer; font: 700 14px var(--font-body); color: var(--primary-fg); text-decoration: underline; text-underline-offset: 3px; }
+.g-noresults { width: 100%; text-align: center; padding: 56px 20px; border: 2px dashed var(--border); border-radius: 28px; background: var(--paper); }
+.g-noresults h3 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--text); margin-bottom: 8px; }
+.g-noresults p  { color: var(--muted); margin-bottom: 20px; }
+
+/* ----- Banda de estadísticas ----- */
+.g-band-stats { position: relative; overflow: hidden; padding: 56px var(--gutter); background: var(--grad-party); color: #fff; }
+.g-band-stats::before { content: ""; position: absolute; inset: 0; background: rgba(22,18,59,.4); }   /* velo uniforme: texto blanco ≥ 5.8:1 sobre naranja y rosa */
+.g-stats-in { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: center; }
+.g-stats-in .g-stat-v { font-family: var(--font-title); font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: 1; letter-spacing: -.035em; color: #fff;
+  background: none; -webkit-text-fill-color: #fff; }
+.g-stats-in .g-stat-l { margin-top: 10px; font-size: 15px; font-weight: 700; color: rgba(255,255,255,.9); }
+
+/* ----- Responsive ----- */
+@media (max-width: 767.98px) {
+  .g-search-wrap { margin-top: -48px; padding-bottom: 40px; }
+  .g-search-card { padding: 20px 16px 16px; border-radius: 24px; }
+  .g-search-head h2 { font-size: 20px; }
+  .g-search-head p { font-size: 13px; }
+  .g-search-cats { flex-direction: column; align-items: stretch; gap: 8px; }
+  .g-band-stats { padding: 36px var(--gutter); }
+  .g-stats-in { gap: 12px; }
+  .sb { margin: 14px 0 14px; }
+  .sb-submit { display: none; }                         /* en móvil se busca al escribir o con Enter */
+  .sb-input { height: 54px; font-size: 16px; border-radius: 16px; }   /* 16px evita el zoom automático de iOS */
+
+  /* Píldoras: UNA sola fila con desplazamiento horizontal táctil (sin barra de scroll) */
+  .cf { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 8px; padding: 2px var(--gutter-x) 8px; margin: 0 calc(var(--gutter-x) * -1 - 16px);
+    scroll-snap-type: x proximity; scroll-padding-inline: var(--gutter-x); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    scrollbar-width: none; -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%); }
+  .cf::-webkit-scrollbar { display: none; }
+  .cf-pill { flex: 0 0 auto; min-height: 44px; scroll-snap-align: start; }
+}

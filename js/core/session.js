@@ -19,14 +19,21 @@ const Session = {
 const Guard = {
   open: false,
   pending: null,                         // acción que el visitante intentó hacer
+  reason: null,                          // mensaje opcional del modal (data-reason)
+  suggest: null,                         // rol a resaltar en el modal (data-suggest)
   canAccess(mode) { return mode === "guest" || Session.role === mode; },
 
-  promptLogin(el) { this.pending = { action: el.dataset.click, id: el.dataset.id }; this.open = true; rerender(); },
-  close() { this.open = false; this.pending = null; rerender(); },
+  promptLogin(el) {
+    this.pending = { action: el.dataset.click, id: el.dataset.id };
+    this.reason = el.dataset.reason || null;
+    this.suggest = el.dataset.suggest || null;
+    this.open = true; rerender();
+  },
+  close() { this.open = false; this.pending = null; this.reason = null; this.suggest = null; rerender(); },
 
   resume(role) {
     const p = this.pending;
-    this.open = false; this.pending = null;
+    this.open = false; this.pending = null; this.reason = null; this.suggest = null;
     Session.login(role);
     App.mode = role;
     if (role === "user") UserApp.view = "eventos";
@@ -41,14 +48,14 @@ const Guard = {
   modal() {
     if (!this.open) return "";
     const opt = (role, ic, title, text) => `
-      <button class="btn btn-outline btn-block" style="justify-content:flex-start;gap:12px;padding:14px 16px;text-align:left" data-click="auth:login" data-role="${role}">
-        ${icon(ic, 20)}<span><strong style="display:block">${title}</strong><small style="color:var(--olive)">${text}</small></span>
+      <button class="btn btn-outline btn-block ${this.suggest === role ? "is-suggested" : ""}" style="justify-content:flex-start;gap:12px;padding:14px 16px;text-align:left" data-click="auth:login" data-role="${role}">
+        ${icon(ic, 20)}<span><strong style="display:block">${title}</strong><small style="color:var(--muted)">${text}</small></span>
       </button>`;
     return `
       <div class="modal-backdrop" data-click="auth:close" data-backdrop>
         <div class="modal modal-confirm" style="max-width:420px">
           <h3 class="modal-confirm-title">Inicia sesión para continuar</h3>
-          <p class="modal-confirm-text">Para inscribirte o ver el detalle de un evento necesitas una cuenta.</p>
+          <p class="modal-confirm-text">${esc(this.reason || "Para inscribirte o ver el detalle de un evento necesitas una cuenta.")}</p>
           <div style="display:grid;gap:10px;margin:18px 0">
             ${opt("user", "user", "Usuario", "Explora e inscríbete a eventos")}
             ${opt("manager", "tasks", "Agente", "Opera los eventos que te asignaron")}
@@ -61,7 +68,7 @@ const Guard = {
 };
 
 registerClick({
-  "auth:open":  () => { Guard.open = true; rerender(); },
+  "auth:open":  (el) => { Guard.reason = el.dataset.reason || null; Guard.suggest = el.dataset.suggest || null; Guard.open = true; rerender(); },
   "auth:close": () => Guard.close(),
   "auth:login": (el) => Guard.resume(el.dataset.role),
   "app:logout": () => { Session.logout(); App.mode = "guest"; App.render({ resetScroll: true }); },

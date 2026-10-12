@@ -36,7 +36,7 @@ const EventsPage = {
     const color = TYPE_COLOR[ev.type];
     const bars = [
       { label: "Asistentes",  pct: percent(ev.registered, ev.capacity), val: `${ev.registered} / ${ev.capacity}`,    color },
-      { label: "Presupuesto", pct: percent(ev.spent, ev.budget),        val: `${cop(ev.spent)} / ${cop(ev.budget)}`, color: "#889063" },
+      { label: "Presupuesto", pct: percent(ev.spent, ev.budget),        val: `${cop(ev.spent)} / ${cop(ev.budget)}`, color: "#6b678f" },
     ].map((b) => `
       <div>
         <div class="ev-bar-label">${b.label}</div>
@@ -132,15 +132,15 @@ const EventsPage = {
       : "";
 
     return `
-      <div class="page" style="--w:1200px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Gestión", title: "Eventos", action: createBtn })}
 
         <div class="filters-stack">
           <div class="filters" style="gap:10px">
             ${searchBox({ id: "events-search", placeholder: "Buscar…", value: this.search, handler: "events:search" })}
-            <div class="filters">${statusPills}</div>
+            <div class="filters scroll-x">${statusPills}</div>
           </div>
-          <div class="filters">
+          <div class="filters scroll-x">
             <button class="pill pill-sm pill-brown ${this.typeFilter === "todos" ? "active" : ""}" data-click="events:type" data-value="todos">Todos los tipos</button>
             ${typePills}
           </div>

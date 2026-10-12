@@ -48,7 +48,7 @@ const AdminSidebar = {
         </div>
 
         <div class="role-box">
-          <div class="role-chip">${icon("shield", 14, { color: "#354024" })} ${App.role === "admin" ? "Administrador" : "Usuario"}</div>
+          <div class="role-chip">${icon("shield", 14, { color: "var(--primary-fg)" })} ${App.role === "admin" ? "Administrador" : "Usuario"}</div>
         </div>
 
         <nav class="nav">
@@ -57,11 +57,12 @@ const AdminSidebar = {
         </nav>
 
         <div class="sidebar-footer">
+          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
           <button class="btn btn-outline switch-btn" data-click="app:logout">
-            ${icon("user", 16, { color: "#889063" })} Cerrar sesión
+            ${icon("user", 16, { color: "var(--muted)" })} Cerrar sesión
           </button>
           <div class="me">
-            <div class="me-avatar" style="background:#cfbb99;color:#4c3d19">SN</div>
+            <div class="me-avatar" style="background:#b8b2ea;color:#16123b">SN</div>
             <div>
               <div class="me-name">Sofía Navarro</div>
               <div class="me-role">Administradora</div>
@@ -92,7 +93,7 @@ const UserSidebar = {
       <aside class="sidebar sidebar-user">
         <div class="sidebar-brand">
           <div class="brand">
-            <div class="brand-logo" style="background:linear-gradient(135deg,#354024,#889063)"><span>E</span></div>
+            <div class="brand-logo" style="background:linear-gradient(135deg,#6a2cff,#6b678f)"><span>E</span></div>
             <div>
               <div class="brand-name">EventPro</div>
               <div class="brand-sub">Portal de eventos</div>
@@ -101,22 +102,23 @@ const UserSidebar = {
         </div>
 
         <div class="role-box">
-          <div class="role-chip" style="background:var(--cream);color:var(--olive)">
-            <span class="dot" style="background:#889063"></span> Modo Usuario
+          <div class="role-chip" style="background:var(--cream);color:var(--muted)">
+            <span class="dot" style="background:#6b678f"></span> Modo Usuario
           </div>
         </div>
 
         <nav class="nav">${nav}</nav>
 
         <div class="sidebar-footer">
+          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
           <button class="btn btn-outline switch-btn" data-click="app:logout">
-            ${icon("shield", 15, { color: "#889063" })} Cerrar sesión
+            ${icon("shield", 15, { color: "var(--muted)" })} Cerrar sesión
           </button>
           <div class="me">
-            <div class="me-avatar" style="background:linear-gradient(135deg,#889063,#cfbb99);color:#fff">CM</div>
+            <div class="me-avatar" style="background:var(--grad-primary);color:#fff">CM</div>
             <div>
               <div class="me-name" style="font-weight:600">Carlos Mejía</div>
-              <div class="me-role" style="color:#cfbb99">Usuario</div>
+              <div class="me-role" style="color:var(--muted-2)">Usuario</div>
             </div>
           </div>
         </div>
@@ -145,11 +147,12 @@ const ManagerSidebar = {
       <aside class="sidebar">
         <div class="sidebar-brand"><div class="brand"><div class="brand-logo"><span>E</span></div>
           <div><div class="brand-name">EventPro</div><div class="brand-sub">Panel del Agente</div></div></div></div>
-        <div class="role-box"><div class="role-chip">${icon("shield", 14, { color: "#354024" })} Agente</div></div>
+        <div class="role-box"><div class="role-chip">${icon("shield", 14, { color: "var(--primary-fg)" })} Agente</div></div>
         <nav class="nav"><div class="nav-title">Menú</div>${nav}</nav>
         <div class="sidebar-footer">
-          <button class="btn btn-outline switch-btn" data-click="app:logout">${icon("right", 16, { color: "#889063" })} Cerrar sesión</button>
-          <div class="me"><div class="me-avatar" style="background:#cfbb99;color:#4c3d19">${esc(initials(Session.user.name))}</div>
+          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
+          <button class="btn btn-outline switch-btn" data-click="app:logout">${icon("right", 16, { color: "var(--muted)" })} Cerrar sesión</button>
+          <div class="me"><div class="me-avatar" style="background:#b8b2ea;color:#16123b">${esc(initials(Session.user.name))}</div>
             <div><div class="me-name">${esc(Session.user.name)}</div><div class="me-role">Event Manager</div></div></div>
         </div>
       </aside>`;

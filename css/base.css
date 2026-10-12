@@ -2,29 +2,123 @@
    base.css — Variables, reset y estilos globales
    ========================================================== */
 
+/* ---------- Layout: ancho del contenedor y margen lateral progresivo ----------
+   El contenido se centra en un contenedor de hasta --container; en pantallas menores el margen
+   lateral crece por tramos (equivale a Tailwind: px-4 sm:px-6 lg:px-12).
+   Puntos de quiebre usados en toda la app:  640px (sm) · 768px (md) · 1024px (lg: aparece el sidebar fijo) · 1240px (xl) */
 :root {
-  /* Paleta */
-  --cream:   #f5efe6;
-  --paper:   #faf7f3;
-  --sand:    #cfbb99;
-  --sand-lt: #f0e8da;
-  --border:  #e8ddd0;
-  --olive:   #889063;
-  --forest:  #354024;
-  --forest2: #4a5a33;
-  --brown:   #4c3d19;
-  --gold:    #6b5626;
-  --text-lt: #e5d7c4;
-  --red:     #a05050;
-  --red-bg:  #f5e0e0;
+  --container: 1680px;        /* ancho máximo del bloque de contenido (incluye su margen lateral) */
+  --gutter-x:  16px;          /* móvil */
+  --nav-h:     72px;          /* alto del navbar público */
+  --appbar-h:  56px;          /* alto de la barra superior de los paneles en móvil */
+}
+@media (min-width: 640px)  { :root { --gutter-x: 24px; } }
+@media (min-width: 1024px) { :root { --gutter-x: 48px; } }
 
-  --font-title: "Fraunces", serif;
-  --font-body:  "Inter", system-ui, sans-serif;
+:root {
+  /* ====================================================
+     TEMA "Electric Campus" — modo CLARO (por defecto)
+     El modo oscuro redefine los mismos nombres más abajo.
+     ==================================================== */
+
+  /* Marca / acentos vibrantes */
+  --primary:      #6a2cff;   /* violeta eléctrico: botones y elementos activos */
+  --primary-fg:   #6a2cff;   /* violeta cuando se usa como TEXTO o ícono sobre la superficie */
+  --primary-2:    #8450ff;   /* violeta claro: degradados */
+  --primary-dark: #4a1fd1;
+  --blue:         #2b6bff;   /* azul vibrante */
+  --accent:       #ff6a1a;   /* naranja neón sutil: llamadas a la acción */
+  --accent-dark:  #e8550a;
+  --pink:         #ff3d9a;   /* rosa fiesta */
+  --teal:         #10c2a0;   /* verde agua: éxito / confirmado */
+  --lime:         #c8f23d;   /* lima: etiquetas "destacado" */
+
+  /* Color constante (no cambia con el tema): hero, footer, texto sobre naranja/lima */
+  --ink:          #16123b;
+  --on-dark:      #f4f1ff;
+
+  /* Superficies y texto (cambian con el tema) */
+  --bg:           #f6f4ff;   /* fondo de la app */
+  --surface:      #ffffff;   /* tarjetas, modales, inputs */
+  --paper:        #fbfaff;   /* fondo alterno de tarjetas */
+  --text:         #16123b;   /* texto principal */
+  --muted:        #6b678f;   /* texto secundario */
+  --muted-2:      #6b678f;   /* texto terciario (etiquetas, horas, ayudas): también cumple AA */
+  --gold:         #4b3fb0;   /* texto de apoyo (índigo) */
+  --border:       #e4e0f7;
+  --lilac:        #b8b2ea;   /* íconos y placeholders de baja prioridad */
+  --lilac-lt:     #edeafd;   /* hover, chips, ítem activo */
+  --tint:         #efeaff;   /* fondo tenue de estados seleccionados */
+  --tint-2:       #ecebf5;
+  --band-1:       #f3f0ff;   /* bandas de color del Home (inicio / fin del degradado) */
+  --band-2:       #ece7ff;
+  --header-solid: rgba(255,255,255,.92);
+  --danger:       #c9244a;
+  --danger-bg:    #ffe3ea;
+  --warn-text:    #8b5000;
+
+  /* Degradados reutilizables */
+  --grad-primary: linear-gradient(135deg, #6a2cff 0%, #2b6bff 100%);
+  --grad-party:   linear-gradient(135deg, #6a2cff 0%, #ff3d9a 55%, #ff6a1a 100%);
+
+  /* Tipografía */
+  --font-title: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body:  "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* ----- Alias: nombres antiguos que usa el CSS existente (no los borres) ----- */
+  --cream:   var(--bg);
+  --sand:    var(--lilac);
+  --sand-lt: var(--lilac-lt);
+  --olive:   var(--muted);
+  --forest:  var(--primary);
+  --forest2: var(--blue);
+  --brown:   var(--text);
+  --text-lt: var(--on-dark);
+  --red:     var(--danger);
+  --red-bg:  var(--danger-bg);
+
+  color-scheme: light;
+}
+
+/* ====================================================
+   MODO OSCURO — grafito + los mismos acentos vibrantes
+   (equivale a las clases `dark:` de Tailwind: aquí basta con
+   redefinir las variables cuando <html data-theme="dark">)
+   ==================================================== */
+:root[data-theme="dark"] {
+  --primary:      #7a43ff;   /* botones: el texto blanco sobre él mantiene contraste 5.1:1 */
+  --primary-fg:   #a98bff;   /* violeta como texto sobre grafito: contraste 6.4:1 */
+  --primary-2:    #8350ff;
+
+  --bg:           #121218;
+  --surface:      #1b1b25;
+  --paper:        #171720;
+  --text:         #f1effb;
+  --muted:        #a3a1bf;
+  --muted-2:      #9391b3;
+  --gold:         #b3a8f5;
+  --border:       #2d2d3d;
+  --lilac:        #6d6a92;
+  --lilac-lt:     #2a2840;
+  --tint:         #26233f;
+  --tint-2:       #23233a;
+  --band-1:       #14141d;
+  --band-2:       #191926;
+  --header-solid: rgba(18,18,24,.9);
+  --danger:       #ff6b87;
+  --danger-bg:    #3a1a25;
+  --warn-text:    #ffb35c;
+
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; margin: 0; padding: 0; }
+html, body { overflow-x: hidden; }                           /* nada debe generar scroll horizontal */
+#root { height: 100vh; height: 100dvh; max-width: 100vw; overflow-x: hidden; }   /* dvh: descuenta la barra del navegador móvil */
+img, svg, video { max-width: 100%; }
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: var(--font-body);
@@ -34,6 +128,7 @@ body {
 }
 
 h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-title); letter-spacing: -0.015em; }
 button { font-family: inherit; }
 img { display: block; }
 
@@ -46,15 +141,16 @@ img { display: block; }
 @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
 
 /* Estructura general de la app */
-.app  { display: flex; height: 100%; background-color: var(--cream); }
-.main { flex: 1; overflow-y: auto; min-width: 0; }
+.app  { display: flex; height: 100%; max-width: 100vw; overflow: hidden; background-color: var(--cream); }
+.main { flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; }
 
-.page      { padding: 40px 48px; max-width: var(--w, 1100px); margin: 0 auto; }
-.page-user { padding: 36px 44px; }
+/* Contenedor de cada pantalla de los paneles: centrado, ancho y con margen lateral progresivo */
+.page      { padding: clamp(20px, 3.2vw, 40px) var(--gutter-x) 48px; max-width: var(--w, 1680px); margin: 0 auto; }
+.page-user { padding-top: clamp(20px, 3vw, 36px); }
 
-.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 32px; }
 .eyebrow     { font-size: 12px; color: var(--olive); font-weight: 500; margin-bottom: 4px; }
-.page-title  { font-family: var(--font-title); font-size: 32px; font-weight: 400; color: var(--brown); }
+.page-title  { font-family: var(--font-title); font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: var(--brown); }
 .page-subtitle { color: var(--olive); font-size: 15px; margin-top: 8px; }
 
 .empty-state       { text-align: center; padding: 80px 0; }

@@ -20,7 +20,7 @@ const UserProfilePage = {
       </div>`).join("");
 
     return `
-      <div class="page" style="--w:700px">
+      <div class="page" style="--w:860px">
         <div style="margin-bottom:36px">
           <div class="eyebrow">Cuenta</div>
           <h1 class="page-title">Mi perfil</h1>
@@ -28,11 +28,11 @@ const UserProfilePage = {
 
         <div class="card" style="padding:28px;margin-bottom:20px">
           <div class="row" style="gap:20px;margin-bottom:28px">
-            <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:#889063;color:#fff">CM</div>
+            <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:#6b678f;color:#fff">CM</div>
             <div>
-              <div style="font-family:var(--font-title);font-size:22px;font-weight:500">Carlos Mejía</div>
-              <div style="font-size:14px;color:#889063;margin-top:4px">carlos.mejia@correo.co</div>
-              <span class="badge" style="display:inline-block;margin-top:8px;font-size:12px;padding:3px 12px;background:#f0e8da;color:#889063">Usuario</span>
+              <div style="font-family:var(--font-title);font-size:22px;font-weight:700">Carlos Mejía</div>
+              <div style="font-size:14px;color:var(--muted);margin-top:4px">carlos.mejia@correo.co</div>
+              <span class="badge" style="display:inline-block;margin-top:8px;font-size:12px;padding:3px 12px;background:var(--lilac-lt);color:var(--gold)">Usuario</span>
             </div>
           </div>
           <div class="form-grid-2" style="gap:16px;margin-bottom:24px">${fields}</div>

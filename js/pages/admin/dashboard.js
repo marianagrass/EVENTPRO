@@ -65,7 +65,7 @@ const DashboardPage = {
       </div>`).join("");
 
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         <div style="margin-bottom:36px">
           <div class="eyebrow" style="margin-bottom:6px">Jueves · 21 de agosto de 2026</div>
           <h1 class="page-title" style="line-height:1.2">Bienvenida, Sofía</h1>

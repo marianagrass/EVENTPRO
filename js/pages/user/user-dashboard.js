@@ -13,18 +13,12 @@ const UserDashboardPage = {
       return diff >= 0 && diff <= 7;
     }).length;
 
+    // Tarjetas de resumen: iconos SVG (antes: emojis 🎯 ✅ 📅)
     const stats = [
-      { label: "Disponibles", value: available.length, icon: "🎯", color: "#354024" },
-      { label: "Inscritos",   value: regs.length,      icon: "✅", color: "#4c3d19" },
-      { label: "Esta semana", value: thisWeek,         icon: "📅", color: "#889063" },
-    ].map((s) => `
-      <div class="stat-pill">
-        <span style="font-size:24px">${s.icon}</span>
-        <div>
-          <div class="stat-pill-value" style="color:${s.color}">${s.value}</div>
-          <div style="font-size:12px;color:#889063;margin-top:3px">${s.label}</div>
-        </div>
-      </div>`).join("");
+      { label: "Disponibles", value: available.length, icon: "compass",       color: "var(--primary-fg)" },
+      { label: "Inscritos",   value: regs.length,      icon: "ticket",        color: "var(--text)" },
+      { label: "Esta semana", value: thisWeek,         icon: "calendar-days", color: "var(--muted)" },
+    ].map(StatCard).join("");
 
     const myList = myEvents.map((ev) => {
       const d = parseDate(ev.date);
@@ -37,9 +31,9 @@ const UserDashboardPage = {
           </div>
           <div style="flex:1;min-width:0">
             <div class="ellipsis" style="font-size:14px;font-weight:700">${esc(ev.name)}</div>
-            <div style="font-size:12px;color:#889063;margin-top:2px">${esc(ev.location.split(",")[0])} · ${esc(ev.time)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(ev.location.split(",")[0])} · ${esc(ev.time)}</div>
           </div>
-          <div style="font-size:12px;font-weight:600;flex-shrink:0;color:${spots <= 20 ? "#8b5000" : "#889063"}">${spots} cupos</div>
+          <div style="font-size:12px;font-weight:600;flex-shrink:0;color:${spots <= 20 ? "var(--warn-text)" : "var(--muted)"}">${spots} cupos</div>
           <button class="btn btn-danger" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600"
                   data-click="user:unregister" data-id="${ev.id}">Cancelar</button>
         </div>`;
@@ -51,19 +45,19 @@ const UserDashboardPage = {
       const tc = TYPE_STYLE[ev.type];
       const d = parseDate(ev.date);
       const spotsBadge = isFull
-        ? `<span class="img-badge" style="background:rgba(160,80,80,.9)">Agotado</span>`
+        ? `<span class="img-badge" style="background:rgba(229,54,90,.9)">Agotado</span>`
         : `<span class="img-badge" style="background:${spots <= 20 ? "rgba(200,100,40,.9)" : "rgba(0,0,0,.5)"}">${spots} cupos</span>`;
       return `
         <div class="card card-hover feat-card">
           <div class="feat-img">
             <img src="${esc(ev.image)}" alt="${esc(ev.name)}" loading="lazy">
             <div class="img-shade" style="background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 60%)"></div>
-            <div style="position:absolute;top:10px;left:10px"><span class="img-badge" style="background:${tc.gradient};color:#e5d7c4">${TYPE_LABEL[ev.type]}</span></div>
+            <div style="position:absolute;top:10px;left:10px"><span class="img-badge" style="background:${tc.gradient};color:#f4f1ff">${TYPE_LABEL[ev.type]}</span></div>
             <div style="position:absolute;top:10px;right:10px">${spotsBadge}</div>
             <h3 class="feat-title">${esc(ev.name)}</h3>
           </div>
           <div style="padding:14px 14px 12px">
-            <div style="font-size:12px;color:#889063;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
               ${d.toLocaleDateString("es-CO", { day: "numeric", month: "long" })} · ${esc(ev.location.split(",")[0])}
             </div>
             <button class="cta-btn" ${isFull ? "disabled" : `style="background:${tc.gradient}"`} data-click="user:register" data-id="${ev.id}">
@@ -74,7 +68,7 @@ const UserDashboardPage = {
     }).join("");
 
     return `
-      <div class="page page-user" style="--w:1100px">
+      <div class="page page-user" style="--w:1680px">
         <div class="hero">
           <div class="hero-blob"></div>
           <div style="position:relative">

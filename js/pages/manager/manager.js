@@ -21,7 +21,7 @@ const ManagerApp = {
   },
   pages() { return { inicio: MgrHomePage, eventos: MgrEventsPage, aforo: MgrCapacityPage, asistentes: MgrAttendeesPage }; },
   currentPage() { return this.pages()[this.view]; },
-  render() { return `<div class="app">${ManagerSidebar.render()}<main class="main">${this.currentPage().render()}</main></div>`; },
+  render() { return AppShell.render({ sidebar: ManagerSidebar.render(), page: this.currentPage().render(), title: navTitle(MANAGER_NAV, this.view) }); },
 };
 
 const mgrModal = ({ title, body, cancel, confirm, label }) => `
@@ -60,7 +60,7 @@ const MgrHomePage = {
     }).join("");
 
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Panel del Agente", title: `Hola, ${esc(Session.user.name.split(" ")[0])}`, subtitle: "Resumen operativo de tus eventos asignados." })}
         <div class="grid-kpi">${kpis}</div>
         <div class="card"><div class="card-head"><h2>Mis próximos eventos</h2></div>${rows || `<p class="card-pad">No tienes eventos asignados.</p>`}</div>
@@ -84,7 +84,7 @@ const MgrEventsPage = {
     }).join("");
     const closing = ManagerApp.own(ManagerApp.closeId);
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Operación", title: "Mis Eventos", subtitle: "Controla si cada evento acepta nuevas inscripciones." })}
         <div class="grid-cards" style="--min:340px">${cards}</div>
         ${closing ? mgrModal({ title: "¿Cerrar inscripciones?", body: `<p class="modal-confirm-text">“${esc(closing.name)}” dejará de aceptar inscripciones. Puedes reabrirlas cuando quieras.</p>`, cancel: "manager:cancelClose", confirm: "manager:confirmClose", label: "Sí, cerrar" }) : ""}
@@ -99,7 +99,7 @@ const MgrCapacityPage = {
       return `
         <div class="card card-pad">
           <h3 class="card-title" style="margin-bottom:12px">${esc(ev.name)}</h3>
-          <div class="row" style="justify-content:space-between;align-items:baseline"><span class="kpi-value" style="font-size:30px">${ev.registered}<small style="font-size:14px;color:var(--sand)"> / ${ev.capacity}</small></span><span class="dash-count">${free} libres</span></div>
+          <div class="row" style="justify-content:space-between;align-items:baseline"><span class="kpi-value" style="font-size:30px">${ev.registered}<small style="font-size:14px;color:var(--muted-2)"> / ${ev.capacity}</small></span><span class="dash-count">${free} libres</span></div>
           <div class="bar" style="margin:12px 0 16px"><div class="bar-fill" style="width:${percent(ev.registered, ev.capacity)}%;background:${TYPE_COLOR[ev.type]}"></div></div>
           <button class="btn btn-outline btn-block" data-click="manager:capOpen" data-id="${ev.id}">Modificar aforo</button>
         </div>`;
@@ -112,10 +112,10 @@ const MgrCapacityPage = {
           <button class="btn btn-outline" data-click="manager:capStep" data-d="-10">−10</button>
           <input id="cap-input" class="input" type="number" min="${ev.registered}" value="${ManagerApp.capValue}" data-input="manager:capInput" style="text-align:center">
           <button class="btn btn-outline" data-click="manager:capStep" data-d="10">+10</button>
-        </div>${ManagerApp.capError ? `<p style="color:#a05050;font-size:13px">${esc(ManagerApp.capError)}</p>` : ""}`,
+        </div>${ManagerApp.capError ? `<p style="color:#e5365a;font-size:13px">${esc(ManagerApp.capError)}</p>` : ""}`,
     }) : "";
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Operación", title: "Control de Aforo", subtitle: "Ajusta la cantidad de cupos de tus eventos." })}
         <div class="grid-cards" style="--min:320px">${cards}</div>${modal}
       </div>`;
@@ -135,23 +135,23 @@ const MgrAttendeesPage = {
     const rows = this.list().map((a) => `
       <tr>
         <td><div class="row" style="gap:12px"><div class="avatar" style="width:38px;height:38px;font-size:13px;background:${avatarColor(a.name)}">${esc(initials(a.name))}</div>
-          <div><div style="font-size:14px;font-weight:500">${esc(a.name)}</div><div style="font-size:12px;color:#889063">${esc(a.email)}</div></div></div></td>
+          <div><div style="font-size:14px;font-weight:500">${esc(a.name)}</div><div style="font-size:12px;color:var(--muted)">${esc(a.email)}</div></div></div></td>
         <td style="font-size:13px;max-width:220px"><div class="ellipsis">${esc(a.eventName)}</div></td>
-        <td style="font-size:13px;color:#889063">${a.checkedInAt ? new Date(a.checkedInAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+        <td style="font-size:13px;color:var(--muted)">${a.checkedInAt ? new Date(a.checkedInAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
         <td><button class="btn ${a.checkedInAt ? "btn-outline" : "btn-primary"} btn-sm" data-click="manager:checkin" data-id="${a.id}">${a.checkedInAt ? "Deshacer" : "Check-in"}</button></td>
       </tr>`).join("");
     const pills = [["todos", "Todos"], ["pendientes", "Por ingresar"], ["presentes", "Presentes"]].map(([k, l]) =>
       `<button class="pill ${ManagerApp.filter === k ? "active" : ""}" data-click="manager:filter" data-value="${k}">${l}</button>`).join("");
     return `
-      <div class="page" style="--w:1100px">
+      <div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: "Operación", title: "Asistentes", subtitle: `Check-in: ${scope.filter((a) => a.checkedInAt).length} de ${scope.length} confirmados.` })}
         <div class="row" style="gap:12px;margin-bottom:16px;flex-wrap:wrap">
           ${searchBox({ id: "mgr-search", placeholder: "Buscar por nombre o email…", value: ManagerApp.search, handler: "manager:search" })}
           <select id="mgr-event" class="input" style="max-width:300px" data-input="manager:event">${Object.entries(evOpts).map(([k, l]) => `<option value="${esc(k)}" ${k === ManagerApp.eventId ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
           ${pills}
         </div>
-        <div class="card"><table class="table"><thead><tr><th>Asistente</th><th>Evento</th><th>Ingreso</th><th></th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:#889063">Sin asistentes para mostrar.</td></tr>`}</tbody></table></div>
+        <div class="card"><div class="table-scroll"><table class="table"><thead><tr><th>Asistente</th><th>Evento</th><th>Ingreso</th><th></th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sin asistentes para mostrar.</td></tr>`}</tbody></table></div></div>
       </div>`;
   },
 };

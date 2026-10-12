@@ -10,12 +10,12 @@ const UserMyEventsPage = {
 
     if (myEvents.length === 0) {
       return `
-        <div class="page" style="--w:900px">
+        <div class="page" style="--w:1100px">
           ${pageHeader({ eyebrow: "Mi agenda", title: "Mis inscripciones" })}
           <div class="card" style="padding:60px 40px;text-align:center">
-            <div class="empty-icon">${icon("calendar", 26, { color: "#cfbb99", width: 1.5 })}</div>
+            <div class="empty-icon">${icon("calendar", 26, { color: "#b8b2ea", width: 1.5 })}</div>
             <div style="font-family:var(--font-title);font-size:22px;margin-bottom:8px">Aún no te has inscrito a ningún evento</div>
-            <p style="color:#889063;font-size:14px;margin-bottom:24px">Explora el catálogo y encuentra algo que te interese.</p>
+            <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Explora el catálogo y encuentra algo que te interese.</p>
           </div>
         </div>`;
     }
@@ -33,19 +33,19 @@ const UserMyEventsPage = {
 
           <div style="flex:1;min-width:0">
             <div class="row" style="gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span class="chip" style="background:${color}18;color:${color}">${TYPE_LABEL[ev.type]}</span>
-              ${daysLeft <= 7 && daysLeft > 0 ? `<span class="chip" style="background:#f0e8da;color:#6b5626">En ${daysLeft} día${daysLeft !== 1 ? "s" : ""}</span>` : ""}
+              <span class="chip" style="background:${color}22;color:var(--text);box-shadow:inset 0 0 0 1px ${color}66">${TYPE_LABEL[ev.type]}</span>
+              ${daysLeft <= 7 && daysLeft > 0 ? `<span class="chip" style="background:var(--lilac-lt);color:var(--gold)">En ${daysLeft} día${daysLeft !== 1 ? "s" : ""}</span>` : ""}
             </div>
-            <div style="font-family:var(--font-title);font-size:18px;font-weight:500;margin-bottom:6px">${esc(ev.name)}</div>
-            <div class="row" style="gap:16px;font-size:13px;color:#889063;flex-wrap:wrap">
+            <div style="font-family:var(--font-title);font-size:18px;font-weight:700;margin-bottom:6px">${esc(ev.name)}</div>
+            <div class="row" style="gap:16px;font-size:13px;color:var(--muted);flex-wrap:wrap">
               <span>🕐 ${esc(ev.time)}</span>
               <span>📍 ${esc(ev.location.split(",")[0])}</span>
             </div>
             <div style="margin-top:12px">
-              <div class="row" style="justify-content:space-between;font-size:11px;color:#cfbb99;margin-bottom:5px">
+              <div class="row" style="justify-content:space-between;font-size:11px;color:var(--muted-2);margin-bottom:5px">
                 <span>Ocupación del evento</span><span>${ev.registered}/${ev.capacity}</span>
               </div>
-              <div class="bar bar-thin" style="background:#f5efe6">
+              <div class="bar bar-thin" style="background:var(--bg)">
                 <div class="bar-fill" style="width:${percent(ev.registered, ev.capacity)}%;background:${color}"></div>
               </div>
             </div>
@@ -59,20 +59,20 @@ const UserMyEventsPage = {
       const d = parseDate(ev.date);
       return `
         <div class="card past-card">
-          <div class="date-badge" style="width:40px;height:40px;border-radius:10px;background:#f5efe6">
-            <span style="color:#cfbb99;font-size:13px;font-weight:700">${String(d.getDate()).padStart(2, "0")}</span>
-            <span style="color:#cfbb99;font-size:9px;text-transform:uppercase">${d.toLocaleString("es-CO", { month: "short" })}</span>
+          <div class="date-badge" style="width:40px;height:40px;border-radius:10px;background:var(--bg)">
+            <span style="color:var(--muted-2);font-size:13px;font-weight:700">${String(d.getDate()).padStart(2, "0")}</span>
+            <span style="color:var(--muted-2);font-size:9px;text-transform:uppercase">${d.toLocaleString("es-CO", { month: "short" })}</span>
           </div>
           <div style="flex:1;min-width:0">
-            <div class="ellipsis" style="font-size:14px;font-weight:500;color:#889063">${esc(ev.name)}</div>
-            <div style="font-size:12px;color:#cfbb99">${esc(ev.location.split(",")[0])}</div>
+            <div class="ellipsis" style="font-size:14px;font-weight:500;color:var(--muted)">${esc(ev.name)}</div>
+            <div style="font-size:12px;color:var(--muted-2)">${esc(ev.location.split(",")[0])}</div>
           </div>
-          <span class="badge st-completado" style="color:#889063">Completado</span>
+          <span class="badge st-completado" style="color:var(--muted)">Completado</span>
         </div>`;
     }).join("");
 
     return `
-      <div class="page" style="--w:900px">
+      <div class="page" style="--w:1100px">
         ${pageHeader({
           eyebrow: "Mi agenda", title: "Mis inscripciones",
           subtitle: `${myEvents.length} evento${myEvents.length !== 1 ? "s" : ""} en total`,
@@ -86,7 +86,7 @@ const UserMyEventsPage = {
 
         ${past.length > 0 ? `
           <div>
-            <h2 class="list-title" style="color:#cfbb99">Asistidos</h2>
+            <h2 class="list-title" style="color:var(--muted-2)">Asistidos</h2>
             <div class="col-stack" style="gap:10px">${pastCards}</div>
           </div>` : ""}
       </div>`;

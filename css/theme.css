@@ -1,0 +1,53 @@
+/* ==========================================================
+   theme.css — Botón de tema + ajustes finos del modo oscuro
+   Las variables de color claro/oscuro viven en css/base.css.
+   Se carga al final para poder ajustar casos puntuales.
+   ========================================================== */
+
+/* Transición suave solo mientras se cambia de tema (la activa js/core/theme.js) */
+.theme-anim, .theme-anim *, .theme-anim *::before, .theme-anim *::after {
+  transition: background-color .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease, fill .3s ease, stroke .3s ease !important;
+}
+
+/* ----- Botón sol / luna ----- */
+.theme-toggle { flex-shrink: 0; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 999px; line-height: 0; }
+.tt-track { position: relative; display: block; width: 62px; height: 34px; border-radius: 999px; background: var(--lilac-lt); border: 1px solid var(--border);
+  color: var(--muted); transition: background .25s, border-color .25s; }
+.tt-hint { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 24px; height: 24px; opacity: .9; }
+.tt-hint-sun  { left: 5px; }
+.tt-hint-moon { right: 5px; }
+.tt-knob { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, #ff8a1f, #ff6a1a); box-shadow: 0 6px 14px -4px rgba(255,106,26,.7);
+  transition: transform .3s cubic-bezier(.4, 1.4, .5, 1), background .3s, box-shadow .3s; }
+.tt-ic { grid-area: 1 / 1; display: grid; place-items: center; transition: opacity .2s, transform .3s; }
+.tt-ic-moon { opacity: 0; transform: rotate(-60deg) scale(.6); }
+
+:root[data-theme="dark"] .tt-knob { transform: translateX(28px); background: linear-gradient(135deg, #7a43ff, #2b6bff); box-shadow: 0 6px 14px -4px rgba(122,67,255,.8); }
+:root[data-theme="dark"] .tt-ic-sun  { opacity: 0; transform: rotate(60deg) scale(.6); }
+:root[data-theme="dark"] .tt-ic-moon { opacity: 1; transform: none; }
+
+.theme-toggle:hover .tt-track { border-color: var(--lilac); }
+.theme-toggle:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+
+/* En el Navbar sobre el hero (transparente) */
+.g-header:not(.is-solid) .tt-track { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.42); color: rgba(255,255,255,.9); backdrop-filter: blur(8px); }
+
+/* En los menús laterales */
+.theme-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; padding: 2px 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* ----- Ajustes puntuales del modo oscuro ----- */
+:root[data-theme="dark"] .st-planificado               { background: #1d2a4d; color: #8fb0ff; }
+:root[data-theme="dark"] .st-pendiente                 { background: #3a2a12; color: #ffb35c; }
+:root[data-theme="dark"] .st-en_progreso,
+:root[data-theme="dark"] .st-confirmado                { background: #12342f; color: #4ee0c3; }
+:root[data-theme="dark"] .st-completado                { background: #2a2a3d; color: #b9b7d6; }
+:root[data-theme="dark"] .st-cancelado                 { background: #3a1a25; color: #ff8aa0; }
+
+:root[data-theme="dark"] .pf { background: #0c0c11; }                 /* el footer sigue siendo el "suelo" más oscuro */
+:root[data-theme="dark"] .g-float { box-shadow: 0 20px 40px -18px rgba(0,0,0,.8); }
+:root[data-theme="dark"] .card, :root[data-theme="dark"] .kpi { box-shadow: 0 1px 0 rgba(255,255,255,.03); }
+:root[data-theme="dark"] .modal-backdrop { background: rgba(0,0,0,.6); }
+:root[data-theme="dark"] .btn-outline:hover { background: var(--lilac-lt); }
+
+::placeholder { color: var(--muted); opacity: .7; }
+::selection { background: rgba(106,44,255,.28); }
