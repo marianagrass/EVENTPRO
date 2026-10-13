@@ -1,31 +1,41 @@
 /* ==========================================================
-   pages/agent.js — Asistente de chat (compartido por admin y usuario)
+   pages/agent.js — Asistente de chat (pestaña «Asistente» de Mi panel)
    Las respuestas son predefinidas: no hay IA real conectada.
    ========================================================== */
 
 const AGENT_SUGGESTIONS = [
-  "¿Qué eventos hay esta semana?",
+  "¿Qué fiestas hay próximamente?",
   "¿Cómo me inscribo a un evento?",
-  "¿Cuántos cupos quedan en el Festival de Música?",
-  "¿Cuáles son los eventos académicos disponibles?",
+  "¿Cuántos cupos quedan en el Color Fest?",
+  "¿Qué eventos son gratis?",
 ];
 
-const AGENT_REPLIES = {
-  "¿qué eventos hay esta semana?": "Esta semana tienes el **Torneo Interfacultades de Fútbol** (22 ago · 07:00) y la **Ceremonia de Grados de Ingeniería** (30 ago · 10:00). ¡Ambos con cupos disponibles! ¿Quieres inscribirte?",
-  "¿cómo me inscribo a un evento?": "Muy fácil 👉 Ve a **Explorar eventos**, encuentra el evento que te interesa y haz clic en **\"Inscribirse al evento\"**. Te aparecerá una confirmación y listo. Tus inscripciones las ves en **Mis inscripciones**.",
-  "¿cuántos cupos quedan en el festival de música?": "El **Festival de Música Andina** (10 oct) tiene **308 cupos disponibles** de 1200 totales. Está bastante solicitado — te recomiendo inscribirte pronto 🎵",
-  "¿cuáles son los eventos académicos disponibles?": "Ahora mismo hay **2 eventos académicos** abiertos:\n\n• **Cumbre de Innovación Académica 2026** — 15 sep · 158 cupos\n• **Simposio de Biotecnología Tropical** — 5 sep · 44 cupos\n\n¿Te interesa alguno?",
-};
+// Las respuestas se arman con los datos reales (Data.events), así nunca quedan desactualizadas.
+const agentList = (evs) => evs.map((e) => `• **${e.name}** — ${parseDate(e.date).toLocaleDateString("es-CO", { day: "numeric", month: "short" })} · ${priceLabel(e)}`).join("\n");
+const agentUpcoming = () => Data.events.filter((e) => !["completado", "cancelado"].includes(e.status)).sort((a, b) => a.date.localeCompare(b.date));
 
 function agentReply(text) {
-  const lower = text.toLowerCase().trim();
-  for (const [key, val] of Object.entries(AGENT_REPLIES)) {
-    if (lower.includes(key.replace(/[¿?]/g, "").trim().slice(0, 15))) return val;
+  const q = normalize(text);
+  if (/gratis|gratuit|sin costo/.test(q)) {
+    const free = agentUpcoming().filter((e) => !e.price);
+    return free.length ? `Estos eventos son gratuitos:\n\n${agentList(free)}` : "Por ahora todos los eventos tienen cover o boletería.";
   }
-  if (lower.includes("evento") || lower.includes("inscrip")) {
-    return "Puedo ayudarte con información sobre eventos, cupos disponibles e inscripciones. ¿Qué necesitas saber? 🎯";
+  if (/fiesta|rumba|party|concierto|musica|banda/.test(q)) {
+    const fun = agentUpcoming().filter((e) => ["fiesta", "musica"].includes(e.type));
+    return fun.length ? `Estos son los próximos planes de fiesta y música:\n\n${agentList(fun)}\n\n¿Quieres que te cuente de alguno?` : "No hay fiestas programadas por ahora.";
   }
-  return "Entendido. Soy el asistente de EventPro y puedo ayudarte con eventos, inscripciones y más. ¿Qué te gustaría saber? 😊";
+  if (/cupo|quedan|disponible/.test(q)) {
+    const ev = Data.events.find((e) => q.includes(normalize(e.name.split(/[:\s]/).slice(0, 2).join(" "))));
+    if (ev) { const n = UserApp.getSpots(ev.id); return `**${ev.name}** tiene **${n} cupos disponibles** de ${ev.capacity}${n <= 20 && n > 0 ? ". Quedan muy pocos, te recomiendo inscribirte pronto." : "."}`; }
+  }
+  if (/inscrib|registr/.test(q)) {
+    return "Es muy fácil: en el **Home** elige un evento y pulsa **Inscribirse**. Confirma tu cupo en la ventana que se abre y listo. Tus inscripciones las ves en **Mi panel → Mis inscripciones**.";
+  }
+  if (/semana|proxim|cuando|que eventos/.test(q)) {
+    return `Estos son los próximos eventos:\n\n${agentList(agentUpcoming().slice(0, 5))}`;
+  }
+  if (q.includes("evento")) return "Puedo ayudarte con información sobre eventos, precios, cupos disponibles e inscripciones. ¿Qué necesitas saber?";
+  return "Entendido. Soy el asistente de EventPro y puedo ayudarte con eventos, precios, inscripciones y más. ¿Qué te gustaría saber?";
 }
 
 function nowTime() {
@@ -50,8 +60,8 @@ const AgentPage = {
         messages: [{
           id: "0", role: "agent", time: nowTime(),
           text: this.isAdmin()
-            ? "Hola 👋 Soy el asistente de EventPro. Puedo ayudarte a consultar estadísticas de eventos, tareas pendientes, asistentes y más. ¿En qué te ayudo hoy?"
-            : "Hola 👋 Soy tu asistente de eventos. Te ayudo a encontrar eventos, inscribirte, ver cupos disponibles y gestionar tu agenda. ¿Qué necesitas?",
+            ? "Hola. Soy el asistente de EventPro. ¿En qué te ayudo hoy?"
+            : "Hola. Soy tu asistente de eventos. Te ayudo a encontrar fiestas y planes, inscribirte, ver cupos disponibles y gestionar tu agenda. ¿Qué necesitas?",
         }],
         input: "",
         loading: false,
@@ -72,7 +82,7 @@ const AgentPage = {
     setTimeout(() => {
       s.messages.push({ id: String(Date.now() + 1), role: "agent", text: agentReply(text), time: nowTime() });
       s.loading = false;
-      if (App.currentPage() === AgentPage) rerender();
+      if (App.currentPage() === AgentPage || (Session.isUser && UserApp.view === "asistente")) rerender();
     }, 900 + Math.random() * 600);
   },
 

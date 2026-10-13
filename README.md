@@ -1,6 +1,6 @@
 # EventPro — HTML, CSS y JavaScript puro
 
-Sistema de organización de eventos con tres modos: **landing**, **panel de administrador** y **portal de usuario**.
+Sistema de organización de eventos con cuatro experiencias: **Home** (visitantes y usuarios), **panel de Agente** (operación de eventos) y **panel de Administrador** (finanzas y cuentas).
 No usa frameworks, ni Node, ni instalación: solo HTML, CSS y JavaScript.
 
 ## Cómo abrirlo
@@ -27,12 +27,29 @@ eventpro-html/
     ├── components/sidebars.js menús laterales de admin y usuario
     ├── pages/
     │   ├── landing.js
-    │   ├── agent.js           chat del asistente (admin y usuario)
-    │   ├── admin/             dashboard, events, calendar, attendees, tasks, profile
-    │   └── user/              user-app (estado), user-dashboard, user-events, user-my-events, user-profile
+    │   ├── agent.js           chat del asistente (pestaña «Asistente» de Mi panel)
+    │   ├── admin/             dashboard (finanzas), accounts (cuentas), profile
+    │   ├── manager/           manager (estado, inicio, aforo, asistentes), events, calendar, tasks
+    │   └── user/              user-app (estado e inscripciones), user-account (Mi panel)
     └── app.js                 estado global, navegación y dibujado (se carga al final)
 ```
 **El orden de los `<script>` en `index.html` importa:** `data` → `utils` → componentes → páginas → `app`.
+
+## Roles y navegación (v6)
+| Rol | Qué ve | Archivos |
+|---|---|---|
+| **Visitante / Usuario** | El **mismo Home** (carrusel, buscador, filtros). Con sesión, el Navbar muestra el avatar con menú (Mi panel, Mis inscripciones, Historial, Perfil y configuración, Cerrar sesión) y las tarjetas muestran «Inscrito». «Mi panel» es una vista aparte con botón «Volver a explorar eventos». | `pages/public/guest-home.js`, `pages/user/user-app.js`, `pages/user/user-account.js` |
+| **Agente** (operación total) | Dashboard operativo · Gestión de eventos (crear, editar, eliminar, **precio**, **disponibilidad**) · Calendario · Cupos y aforo · Asistentes (lista + check-in + alta manual) · Tareas | `pages/manager/*` |
+| **Administrador** (finanzas y cuentas) | Finanzas y estadísticas (dinero recaudado, ingresos por categoría, crecimiento de usuarios, ocupación global) · Gestión de cuentas (filtrar por rol/estado, activar/desactivar, eliminar) · Perfil. **No** opera eventos. | `pages/admin/*` |
+
+**Modal de evento único** (`components/event-modal.js`): lo dibuja `PublicLayout` sobre el Home. Su estado es solo `EventModal.eventId` (+ `done`/`error`) y el evento se lee siempre de `Data.events`. Flujo del visitante: «Inscribirse» → `Guard.promptLogin` guarda `Guard.pending = { eventId }` → login → `Guard.resume` entra a la sesión, redibuja el Home y recién ahí llama `EventModal.open(eventId)`.
+La caja de cupos usa la clase `.evm-info` (`css/panels.css`) con variables de tema: gris suave en claro; fondo translúcido + borde sutil + texto claro en oscuro.
+
+**Datos conectados entre roles** (`js/data.js`):
+- `ev.price` (COP, 0 = gratis). Recaudo = `price × registered` (`eventRevenue(ev)`); lo calcula el Admin en vivo.
+- Inscribirse / cancelar (`UserApp.register/unregister`) cambia `ev.registered` y crea/quita al asistente: el Agente lo ve en «Asistentes» y el Admin en las cifras.
+- `Data.accounts` (usuarios y agentes). Si el Admin **suspende o elimina** una cuenta demo (Carlos Mejía / Carmen López), el login la rechaza.
+- Imágenes de los eventos nuevos: URLs de Unsplash; si alguna no carga se ve el degradado del tipo. Cámbialas en el campo `image` de cada evento.
 
 ## Cómo funciona (para entender el código)
 - Cada pantalla es un objeto con un método `render()` que **devuelve HTML como texto** (template literals).
@@ -52,7 +69,7 @@ registerClick({ "miPagina:saludar": () => alert("¡Hola!") });
 ## Limitaciones actuales
 - **No hay base de datos:** lo que creas o editas vive en memoria y se pierde al recargar la página.
 - El asistente responde con textos predefinidos (no es IA real).
-- Los botones "Guardar cambios" de los perfiles todavía no hacen nada.
+- «Guardar cambios» funciona en el perfil del usuario (en memoria); el del Admin y el cambio de contraseña aún son maquetas.
 - El diseño está pensado para pantalla de computador (no es responsive para celular).
 
 ## Siguientes pasos sugeridos
@@ -61,8 +78,8 @@ registerClick({ "miPagina:saludar": () => alert("¡Hola!") });
 3. Conectar un backend o base de datos (Supabase, Firebase, etc.).
 
 ## Novedades: Home público y rol Agente
-- Modo **guest** (por defecto): `pages/public/guest-home.js`. "Inscribirse"/"Ver detalles" llevan `data-requires-auth`; el guard en `utils.js` abre el modal de login (`core/session.js`) y retoma la acción al entrar.
-- Rol **Agente** (`manager`): `pages/manager/manager.js` + `ManagerSidebar`. Sidebar: Inicio, Mis Eventos, Control de Aforo, Asistentes. Asignaciones en `Data.eventAgents`.
+- Modo **guest** (por defecto): `pages/public/guest-home.js`. "Inscribirse"/"Ver detalles" llevan `data-requires-auth`; el guard en `utils.js` abre el modal de login (`core/session.js`) y, al entrar, abre el modal del evento.
+- Rol **Agente** (`manager`): `pages/manager/*` + `ManagerSidebar`. Ahora opera **todos** los eventos (ya no hay asignaciones por evento; `Data.eventAgents` se eliminó).
 - "Cambiar a Admin/Usuario" ahora es "Cerrar sesión". El login es simulado (3 accesos demo).
 - `backend/` trae la migración SQL y el middleware de referencia (no se ejecutan en la demo).
 

@@ -1,5 +1,5 @@
 /* ==========================================================
-   pages/admin/tasks.js — Tablero Kanban de tareas
+   pages/manager/tasks.js — Tablero Kanban de tareas (herramienta del Agente)
    ========================================================== */
 
 const TASK_COLUMNS = [
@@ -13,14 +13,12 @@ const taskBlank = () => ({
   dueDate: "", priority: "media", status: "pendiente", category: "",
 });
 
-const TasksPage = {
+const MgrTasksPage = {
   search: "",
   filterPriority: "todas",
   modal: false,
   editingId: null,
   form: taskBlank(),
-
-  isAdmin() { return App.role === "admin"; },
 
   filtered() {
     return Data.tasks.filter((t) => {
@@ -36,12 +34,10 @@ const TasksPage = {
       .map((c) => `<button class="btn btn-outline btn-xs" data-click="tasks:move" data-id="${task.id}" data-status="${c.key}">→ ${c.label}</button>`)
       .join("");
 
-    const adminActions = this.isAdmin()
-      ? `<div class="row" style="margin-left:auto;gap:4px">
+    const adminActions = `<div class="row" style="margin-left:auto;gap:4px">
            <button class="btn btn-outline btn-xs" data-click="tasks:openEdit" data-id="${task.id}">Editar</button>
            <button class="btn btn-danger btn-xs" data-click="tasks:remove" data-id="${task.id}">Borrar</button>
-         </div>`
-      : "";
+         </div>`;
 
     return `
       <div class="task-card">
@@ -113,9 +109,7 @@ const TasksPage = {
         </div>`;
     }).join("");
 
-    const addBtn = this.isAdmin()
-      ? `<button class="btn btn-primary" data-click="tasks:openNew">${icon("plus", 16, { width: 2.5 })} Nueva tarea</button>`
-      : "";
+    const addBtn = `<button class="btn btn-primary" data-click="tasks:openNew">${icon("plus", 16, { width: 2.5 })} Nueva tarea</button>`;
 
     return `
       <div class="page" style="--w:1680px">
@@ -136,14 +130,14 @@ const TasksPage = {
   },
 };
 
-bindForm("tasks:form", () => TasksPage.form);
+bindForm("tasks:form", () => MgrTasksPage.form);
 
 registerInput({
-  "tasks:search": (el) => { TasksPage.search = el.value; rerender(); },
+  "tasks:search": (el) => { MgrTasksPage.search = el.value; rerender(); },
 });
 
 registerClick({
-  "tasks:priority": (el) => { TasksPage.filterPriority = el.dataset.value; rerender(); },
+  "tasks:priority": (el) => { MgrTasksPage.filterPriority = el.dataset.value; rerender(); },
 
   "tasks:move": (el) => {
     Data.tasks = Data.tasks.map((t) => (t.id === el.dataset.id ? { ...t, status: el.dataset.status } : t));
@@ -155,30 +149,30 @@ registerClick({
   },
 
   "tasks:openNew": () => {
-    TasksPage.editingId = null;
-    TasksPage.form = taskBlank();
-    TasksPage.modal = true;
+    MgrTasksPage.editingId = null;
+    MgrTasksPage.form = taskBlank();
+    MgrTasksPage.modal = true;
     rerender();
   },
   "tasks:openEdit": (el) => {
     const t = Data.tasks.find((x) => x.id === el.dataset.id);
     const { id, ...rest } = t;
-    TasksPage.editingId = id;
-    TasksPage.form = rest;
-    TasksPage.modal = true;
+    MgrTasksPage.editingId = id;
+    MgrTasksPage.form = rest;
+    MgrTasksPage.modal = true;
     rerender();
   },
-  "tasks:closeModal": () => { TasksPage.modal = false; rerender(); },
+  "tasks:closeModal": () => { MgrTasksPage.modal = false; rerender(); },
 
   "tasks:save": () => {
-    const f = TasksPage.form;
+    const f = MgrTasksPage.form;
     if (!f.title || !f.assignee) return;
-    if (TasksPage.editingId) {
-      Data.tasks = Data.tasks.map((t) => (t.id === TasksPage.editingId ? { ...f, id: t.id } : t));
+    if (MgrTasksPage.editingId) {
+      Data.tasks = Data.tasks.map((t) => (t.id === MgrTasksPage.editingId ? { ...f, id: t.id } : t));
     } else {
       Data.tasks = [...Data.tasks, { ...f, id: "t" + Date.now() }];
     }
-    TasksPage.modal = false;
+    MgrTasksPage.modal = false;
     rerender();
   },
 });

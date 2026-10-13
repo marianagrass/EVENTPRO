@@ -1,160 +1,63 @@
 /* ==========================================================
-   components/sidebars.js — Menús laterales (admin y usuario)
+   components/sidebars.js — Menús laterales de los paneles internos
+   Admin  → Finanzas y estadísticas · Gestión de cuentas · Mi perfil
+   Agente → Dashboard operativo · Eventos · Calendario · Cupos/Aforo · Asistentes · Tareas
+   (El usuario NO tiene menú lateral: usa el Home con el Navbar y «Mi panel».)
    ========================================================== */
 
 const ADMIN_NAV = [
-  { id: "dashboard", label: "Inicio",       icon: "home" },
-  { id: "events",    label: "Eventos",      icon: "calendar" },
-  { id: "calendar",  label: "Calendario",   icon: "clock" },
-  { id: "attendees", label: "Asistentes",   icon: "users", adminOnly: true },
-  { id: "tasks",     label: "Tareas",       icon: "tasks" },
-  { id: "agente",    label: "Asistente IA", icon: "chat", badge: "IA" },
-  { id: "profile",   label: "Mi perfil",    icon: "user" },
+  { id: "dashboard", label: "Finanzas y estadísticas", icon: "chart" },
+  { id: "accounts",  label: "Gestión de cuentas",      icon: "users" },
+  { id: "profile",   label: "Mi perfil",               icon: "user" },
 ];
 
-const USER_NAV = [
-  { id: "inicio",      label: "Inicio",            icon: "home" },
-  { id: "eventos",     label: "Explorar eventos",  icon: "search" },
-  { id: "mis-eventos", label: "Mis inscripciones", icon: "tasks" },
-  { id: "agente",      label: "Asistente IA",      icon: "chat" },
-  { id: "perfil",      label: "Mi perfil",         icon: "user" },
+const MANAGER_NAV = [
+  { id: "inicio",     label: "Dashboard operativo", icon: "home" },
+  { id: "eventos",    label: "Gestión de eventos",  icon: "ticket" },
+  { id: "calendario", label: "Calendario",          icon: "calendar" },
+  { id: "aforo",      label: "Cupos y aforo",       icon: "gauge" },
+  { id: "asistentes", label: "Asistentes",          icon: "check" },
+  { id: "tareas",     label: "Tareas",              icon: "tasks" },
 ];
+
+/** Estructura común del menú lateral. cfg: { sub, roleLabel, items, active, click, meName, meRole, meBg } */
+function sidebarHtml(cfg) {
+  const nav = cfg.items.map((item) => {
+    const active = cfg.active === item.id;
+    return `
+      <button class="nav-item ${active ? "active" : ""}" data-click="${cfg.click}" data-view="${item.id}">
+        ${icon(item.icon, 20, { width: 1.8 })}<span class="nav-label">${item.label}</span>${active ? `<span class="nav-dot"></span>` : ""}
+      </button>`;
+  }).join("");
+  return `
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand">
+          <div class="brand-logo"><span>E</span></div>
+          <div><div class="brand-name">EventPro</div><div class="brand-sub">${cfg.sub}</div></div>
+        </div>
+      </div>
+      <div class="role-box"><div class="role-chip">${icon("shield", 14, { color: "var(--primary-fg)" })} ${cfg.roleLabel}</div></div>
+      <nav class="nav"><div class="nav-title">Menú</div>${nav}</nav>
+      <div class="sidebar-footer">
+        <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
+        <button class="btn btn-outline switch-btn" data-click="app:logout">${icon("logout", 16, { color: "var(--muted)" })} Cerrar sesión</button>
+        <div class="me">
+          <div class="me-avatar" style="background:var(--lilac);color:#16123b">${esc(initials(Session.user.name))}</div>
+          <div><div class="me-name">${esc(Session.user.name)}</div><div class="me-role">${cfg.meRole}</div></div>
+        </div>
+      </div>
+    </aside>`;
+}
 
 const AdminSidebar = {
   render() {
-    const items = ADMIN_NAV.filter((i) => !i.adminOnly || App.role === "admin");
-    const nav = items.map((item) => {
-      const active = App.adminView === item.id;
-      const isAgent = item.id === "agente";
-      return `
-        <button class="nav-item ${active ? "active" : ""} ${isAgent ? "agent" : ""}" data-click="nav:admin" data-view="${item.id}">
-          ${icon(item.icon, 20, { width: 1.8 })}
-          <span class="nav-label">${item.label}</span>
-          ${item.badge && !active ? `<span class="nav-badge">${item.badge}</span>` : ""}
-          ${active && !isAgent ? `<span class="nav-dot"></span>` : ""}
-        </button>`;
-    }).join("");
-
-    return `
-      <aside class="sidebar">
-        <div class="sidebar-brand">
-          <div class="brand">
-            <div class="brand-logo"><span>E</span></div>
-            <div>
-              <div class="brand-name">EventPro</div>
-              <div class="brand-sub">Panel administrativo</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="role-box">
-          <div class="role-chip">${icon("shield", 14, { color: "var(--primary-fg)" })} ${App.role === "admin" ? "Administrador" : "Usuario"}</div>
-        </div>
-
-        <nav class="nav">
-          <div class="nav-title">Menú</div>
-          ${nav}
-        </nav>
-
-        <div class="sidebar-footer">
-          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
-          <button class="btn btn-outline switch-btn" data-click="app:logout">
-            ${icon("user", 16, { color: "var(--muted)" })} Cerrar sesión
-          </button>
-          <div class="me">
-            <div class="me-avatar" style="background:#b8b2ea;color:#16123b">SN</div>
-            <div>
-              <div class="me-name">Sofía Navarro</div>
-              <div class="me-role">Administradora</div>
-            </div>
-          </div>
-        </div>
-      </aside>`;
+    return sidebarHtml({ sub: "Panel de administración", roleLabel: "Administrador", items: ADMIN_NAV, active: App.adminView, click: "nav:admin", meRole: "Administradora" });
   },
 };
-
-const UserSidebar = {
-  render() {
-    const count = UserApp.registrations.length;
-    const nav = USER_NAV.map((item) => {
-      const active = UserApp.view === item.id;
-      const isAgent = item.id === "agente";
-      return `
-        <button class="nav-item ${active ? "active" : ""} ${isAgent ? "agent" : ""}" data-click="nav:user" data-view="${item.id}">
-          ${icon(item.icon, 20, { width: 1.8 })}
-          <span class="nav-label">${item.label}</span>
-          ${item.id === "mis-eventos" && count > 0 ? `<span class="nav-count">${count}</span>` : ""}
-          ${isAgent && !active ? `<span class="nav-badge">IA</span>` : ""}
-          ${active && item.id !== "mis-eventos" && !isAgent ? `<span class="nav-dot"></span>` : ""}
-        </button>`;
-    }).join("");
-
-    return `
-      <aside class="sidebar sidebar-user">
-        <div class="sidebar-brand">
-          <div class="brand">
-            <div class="brand-logo" style="background:linear-gradient(135deg,#6a2cff,#6b678f)"><span>E</span></div>
-            <div>
-              <div class="brand-name">EventPro</div>
-              <div class="brand-sub">Portal de eventos</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="role-box">
-          <div class="role-chip" style="background:var(--cream);color:var(--muted)">
-            <span class="dot" style="background:#6b678f"></span> Modo Usuario
-          </div>
-        </div>
-
-        <nav class="nav">${nav}</nav>
-
-        <div class="sidebar-footer">
-          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
-          <button class="btn btn-outline switch-btn" data-click="app:logout">
-            ${icon("shield", 15, { color: "var(--muted)" })} Cerrar sesión
-          </button>
-          <div class="me">
-            <div class="me-avatar" style="background:var(--grad-primary);color:#fff">CM</div>
-            <div>
-              <div class="me-name" style="font-weight:600">Carlos Mejía</div>
-              <div class="me-role" style="color:var(--muted-2)">Usuario</div>
-            </div>
-          </div>
-        </div>
-      </aside>`;
-  },
-};
-
-/* ---------- Agente (Event Manager): solo 4 opciones ---------- */
-const MANAGER_NAV = [
-  { id: "inicio",     label: "Inicio",           icon: "home" },
-  { id: "eventos",    label: "Mis Eventos",      icon: "calendar" },
-  { id: "aforo",      label: "Control de Aforo", icon: "users" },
-  { id: "asistentes", label: "Asistentes",       icon: "check" },
-];
 
 const ManagerSidebar = {
   render() {
-    const nav = MANAGER_NAV.map((item) => {
-      const active = ManagerApp.view === item.id;
-      return `
-        <button class="nav-item ${active ? "active" : ""}" data-click="nav:manager" data-view="${item.id}">
-          ${icon(item.icon, 20, { width: 1.8 })}<span class="nav-label">${item.label}</span>${active ? `<span class="nav-dot"></span>` : ""}
-        </button>`;
-    }).join("");
-    return `
-      <aside class="sidebar">
-        <div class="sidebar-brand"><div class="brand"><div class="brand-logo"><span>E</span></div>
-          <div><div class="brand-name">EventPro</div><div class="brand-sub">Panel del Agente</div></div></div></div>
-        <div class="role-box"><div class="role-chip">${icon("shield", 14, { color: "var(--primary-fg)" })} Agente</div></div>
-        <nav class="nav"><div class="nav-title">Menú</div>${nav}</nav>
-        <div class="sidebar-footer">
-          <div class="theme-row"><span>Tema</span>${ThemeToggle.render()}</div>
-          <button class="btn btn-outline switch-btn" data-click="app:logout">${icon("right", 16, { color: "var(--muted)" })} Cerrar sesión</button>
-          <div class="me"><div class="me-avatar" style="background:#b8b2ea;color:#16123b">${esc(initials(Session.user.name))}</div>
-            <div><div class="me-name">${esc(Session.user.name)}</div><div class="me-role">Event Manager</div></div></div>
-        </div>
-      </aside>`;
+    return sidebarHtml({ sub: "Panel del Agente", roleLabel: "Agente", items: MANAGER_NAV, active: ManagerApp.view, click: "nav:manager", meRole: "Event Manager" });
   },
 };

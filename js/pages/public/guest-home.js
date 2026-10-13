@@ -3,12 +3,15 @@
    Secciones: Hero → estadísticas → Cómo funciona → Categorías →
    Eventos → FAQ → banner de registro. El header, el footer y los
    modales los pone PublicLayout (components/public-layout.js).
-   "Inscribirse" y "Ver detalles" llevan data-requires-auth: el guard
-   global (utils.js) los intercepta y abre el modal de login.
+
+   ESTE ES EL HOME DE TODOS: visitantes y usuarios con sesión.
+   - Visitante: "Inscribirse" y "Ver detalles" llevan data-requires-auth; el guard global
+     (utils.js) abre el login y, al entrar, se abre el modal del evento (core/session.js).
+   - Usuario: los mismos botones abren directamente EventModal; la tarjeta marca «Inscrito».
    ========================================================== */
 
 const GUEST_STEPS = [
-  ["calendar", "Descubre", "Eventos académicos, culturales y deportivos de tu institución, siempre actualizados.", "#6a2cff", "#8f5bff"],
+  ["calendar", "Descubre", "Fiestas, conciertos, torneos y eventos de tu universidad, siempre actualizados.", "#6a2cff", "#8f5bff"],
   ["check",    "Inscríbete en segundos", "Reserva tu cupo, consulta tu agenda y recibe confirmación al instante.", "#ff6a1a", "#ff9a3d"],
   ["shield",   "Vive sin complicaciones", "Equipos de gestión dedicados cuidan aforo, acceso y asistencia de cada evento.", "#f0287f", "#ff5fa8"],
 ];
@@ -18,7 +21,7 @@ const GUEST_FAQ = [
   ["¿Cómo me inscribo a un evento?", "Inicia sesión, elige el evento y pulsa «Inscribirse». Confirma tu cupo y lo verás en la sección «Mis inscripciones»."],
   ["¿Qué pasa si un evento se queda sin cupos?", "Aparece como «Agotado». Si alguien cancela su inscripción, el cupo se libera y vuelve a estar disponible."],
   ["¿Puedo cancelar mi inscripción?", "Sí. Desde «Mis inscripciones» puedes cancelarla cuando quieras y tu cupo queda libre para otra persona."],
-  ["¿Cómo gestiono los eventos que organizo?", "Con el portal de organizadores (Agentes) administras el aforo, la disponibilidad y el check-in de los eventos que tienes asignados."],
+  ["¿Cómo gestiono los eventos que organizo?", "Con el portal de organizadores (Agentes) se crean y editan los eventos, se controla el aforo y se hace el check-in de los asistentes."],
 ];
 
 const GuestHome = {
@@ -60,11 +63,21 @@ const GuestHome = {
   card(ev) {
     const tc = TYPE_STYLE[ev.type], d = parseDate(ev.date);
     const spots = UserApp.getSpots(ev.id), full = spots <= 0;
+    const mine = Session.isUser && UserApp.isRegistered(ev.id);
+    // Visitante: el guard pide login. Usuario con sesión: abre el modal directamente.
+    const auth = Session.isAuthenticated ? "" : "data-requires-auth";
+    const imgBg = `background-image:url('${esc(ev.image)}'),${tc.gradient}`;      // si la foto no carga, queda el degradado
+    const cta = mine
+      ? `<button class="btn btn-outline" style="flex:1" data-click="event:details" data-id="${ev.id}">Ver detalles</button>
+         <div class="registered-tag" style="flex:1;justify-content:center">${icon("check", 14, { width: 3 })}<span>Inscrito</span></div>`
+      : `<button class="btn btn-outline" style="flex:1" ${auth} data-click="event:details" data-id="${ev.id}">Ver detalles</button>
+         <button class="cta-btn" style="flex:1;background:${tc.gradient}" ${auth} data-click="event:register" data-id="${ev.id}" ${full ? "disabled" : ""}>${full ? "Agotado" : "Inscribirse"}</button>`;
     return `
       <article class="card card-hover g-card">
-        <div class="g-img" style="background-image:url('${esc(ev.image)}')">
+        <div class="g-img" style="${imgBg}">
           <span class="img-badge img-badge-lg" style="background:${tc.gradient}">${TYPE_LABEL[ev.type]}</span>
           ${ev.featured ? `<span class="g-star">★ Destacado</span>` : ""}
+          <span class="g-price ${ev.price > 0 ? "" : "is-free"}">${esc(priceLabel(ev))}</span>
           <div class="g-date"><b>${String(d.getDate()).padStart(2, "0")}</b><small>${d.toLocaleString("es-CO", { month: "short" })}</small></div>
         </div>
         <div class="g-body">
@@ -74,10 +87,7 @@ const GuestHome = {
             <div class="bar bar-thin" style="flex:1"><div class="bar-fill" style="width:${percent(ev.registered, ev.capacity)}%;background:${tc.gradient}"></div></div>
             <span class="dash-count">${full ? "Agotado" : spots + " cupos"}</span>
           </div>
-          <div class="g-buttons">
-            <button class="btn btn-outline" style="flex:1" data-requires-auth data-click="guest:details" data-id="${ev.id}">Ver detalles</button>
-            <button class="cta-btn" style="flex:1;background:${tc.gradient}" data-requires-auth data-click="guest:register" data-id="${ev.id}">Inscribirse</button>
-          </div>
+          <div class="g-buttons">${cta}</div>
         </div>
       </article>`;
   },
@@ -177,7 +187,7 @@ const GuestHome = {
       <!-- Búsqueda + filtros: flota sobre el borde inferior del hero -->
       <section class="g-search-wrap" id="g-search" aria-label="Buscar eventos">
         <div class="g-search-card">
-          <div class="g-search-head"><h2>¿Qué quieres vivir hoy?</h2><p>Busca por nombre, lugar o categoría.</p></div>
+          <div class="g-search-head"><h2>${Session.isUser ? `Hola, ${esc(Session.firstName)}. ` : ""}¿Qué quieres vivir hoy?</h2><p>Busca por nombre, lugar o categoría.</p></div>
           ${SearchBar.render({ id: "home-search", value: this.query, placeholder: "Busca eventos, lugares…", label: "Buscar eventos",
                                input: "home:search", clear: "home:clear", submit: "home:submit" })}
           <div class="g-search-cats">
@@ -208,8 +218,11 @@ const GuestHome = {
             <p class="g-lead">Todo lo que pasa en tu universidad, en un solo lugar y a un par de clics.</p>
             <ol class="g-steps">${this.steps()}</ol>
             <div class="row" style="gap:12px;flex-wrap:wrap">
-              <button class="btn btn-primary btn-xl" data-click="auth:open">Crear cuenta</button>
-              <button class="btn btn-outline btn-xl" data-click="footer:scroll" data-target="g-events">Explorar eventos</button>
+              ${Session.isUser
+                ? `<button class="btn btn-primary btn-xl" data-click="footer:scroll" data-target="g-events">Explorar eventos</button>
+                   <button class="btn btn-outline btn-xl" data-click="nav:user" data-view="inscripciones">Mis inscripciones</button>`
+                : `<button class="btn btn-primary btn-xl" data-click="auth:open">Crear cuenta</button>
+                   <button class="btn btn-outline btn-xl" data-click="footer:scroll" data-target="g-events">Explorar eventos</button>`}
             </div>
           </div>
         </div>
@@ -241,11 +254,17 @@ const GuestHome = {
         </div>
 
         <div class="g-cta-in">
+          ${Session.isUser ? `
+          <div>
+            <h2>Tu agenda, siempre a la mano</h2>
+            <p>Revisa tus inscripciones, tu historial y tus datos desde tu panel.</p>
+          </div>
+          <button class="btn btn-accent btn-xl" data-click="nav:user" data-view="panel">Ir a mi panel ${icon("right", 16, { width: 2.8 })}</button>` : `
           <div>
             <h2>¿Listo para vivir tu próximo evento?</h2>
             <p>Crea tu cuenta gratis, inscríbete en segundos y lleva tu agenda siempre contigo.</p>
           </div>
-          <button class="btn btn-accent btn-xl" data-click="auth:open">Crear cuenta ${icon("right", 16, { width: 2.8 })}</button>
+          <button class="btn btn-accent btn-xl" data-click="auth:open">Crear cuenta ${icon("right", 16, { width: 2.8 })}</button>`}
         </div>
       </section>`;
 
@@ -256,6 +275,7 @@ const GuestHome = {
   afterRender() {
     PublicLayout.afterRender({ overHero: true });
     HeroCarousel.mount();
+    EventModal.afterRender();
   },
 };
 
@@ -305,6 +325,7 @@ registerClick({
 
   // Navbar → "Buscar": lleva a la barra y deja el cursor listo para escribir
   "guest:focusSearch": () => {
+    if (Session.isUser && UserApp.view !== "home") { UserApp.view = "home"; App.render({ resetScroll: true }); }
     document.getElementById("g-search")?.scrollIntoView({ behavior: "smooth", block: "center" });
     setTimeout(() => document.getElementById("home-search")?.focus({ preventScroll: true }), 350);
   },

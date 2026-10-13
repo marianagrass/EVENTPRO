@@ -1,3 +1,7 @@
+// NOTA (v6): el rol Agente ahora opera TODOS los eventos (crear/editar/eliminar, precio, disponibilidad,
+// aforo, asistentes). La tabla event_agents y requireEventAssignment quedan solo como referencia del modelo
+// anterior; para el nuevo modelo basta requireRole("agent"). El rol admin ya NO debe poder mutar eventos:
+// limítalo a /admin/stats (finanzas) y /admin/accounts (listar, activar/suspender, eliminar).
 // Referencia (Express). El frontend NO es seguridad: esto sí.
 const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user.role) ? next() : res.sendStatus(403);

@@ -1,138 +1,60 @@
 /* ==========================================================
-   pages/admin/profile.js — Perfil del administrador, equipo y permisos
+   pages/admin/profile.js — Perfil del administrador y permisos del rol
    ========================================================== */
-
-const TEAM = [
-  { id: "u1", name: "Sofía Navarro",   role: "admin", email: "sofia@eventpro.es",    avatar: "SN", dept: "Dirección" },
-  { id: "u2", name: "Andrés Vega",     role: "user",  email: "avega@eventpro.es",    avatar: "AV", dept: "Producción" },
-  { id: "u3", name: "Isabela Ruiz",    role: "user",  email: "iruiz@eventpro.es",    avatar: "IR", dept: "Coordinación" },
-  { id: "u4", name: "Carmen López",    role: "user",  email: "clopez@eventpro.es",   avatar: "CL", dept: "Logística" },
-  { id: "u5", name: "Rodrigo Fuentes", role: "user",  email: "rfuentes@eventpro.es", avatar: "RF", dept: "Comunicación" },
+const ADMIN_PERMISSIONS = [
+  { ok: true,  text: "Ver el dinero recaudado y los ingresos por categoría" },
+  { ok: true,  text: "Ver el crecimiento de usuarios y la ocupación global" },
+  { ok: true,  text: "Ver todos los Usuarios y Agentes registrados" },
+  { ok: true,  text: "Activar, desactivar y eliminar cuentas" },
+  { ok: false, text: "No crea, edita ni elimina eventos (lo hace el Agente)" },
+  { ok: false, text: "No gestiona asistentes, calendario ni tareas" },
 ];
-
-const PERMISSIONS = {
-  admin: [
-    { ok: true, text: "Ver y gestionar todos los eventos" },
-    { ok: true, text: "Crear, editar y eliminar eventos" },
-    { ok: true, text: "Gestionar asistentes" },
-    { ok: true, text: "Ver y asignar tareas a cualquier usuario" },
-    { ok: true, text: "Ver presupuestos y datos financieros" },
-    { ok: true, text: "Administrar usuarios y cambiar roles" },
-    { ok: true, text: "Acceso completo al calendario" },
-  ],
-  user: [
-    { ok: true,  text: "Ver eventos asignados" },
-    { ok: true,  text: "Ver asistentes de sus eventos" },
-    { ok: true,  text: "Gestionar sus propias tareas" },
-    { ok: true,  text: "Acceso al calendario (solo lectura)" },
-    { ok: false, text: "No puede crear ni eliminar eventos" },
-    { ok: false, text: "No puede ver datos financieros" },
-    { ok: false, text: "No puede administrar usuarios" },
-  ],
-};
 
 const PROFILE_FIELDS = [
   { label: "Nombre",       value: "Sofía" },
   { label: "Apellido",     value: "Navarro" },
-  { label: "Correo",       value: "sofia@eventpro.es" },
-  { label: "Teléfono",     value: "+34 611 234 567" },
+  { label: "Correo",       value: "sofia.navarro@eventpro.co" },
+  { label: "Teléfono",     value: "+57 311 234 5678" },
   { label: "Departamento", value: "Dirección" },
-  { label: "Ciudad",       value: "Madrid" },
+  { label: "Ciudad",       value: "Cali" },
 ];
 
 const ProfilePage = {
   render() {
-    const role = App.role;
-    const isAdmin = role === "admin";
-
     const fields = PROFILE_FIELDS.map((f) => `
       <div>
         <label class="field-label field-label-sm">${f.label}</label>
         <input class="input" value="${esc(f.value)}">
       </div>`).join("");
 
-    const team = TEAM.map((u, i) => `
-      <tr>
-        <td>
-          <div class="row" style="gap:10px">
-            <div class="avatar" style="width:34px;height:34px;font-size:12px;font-weight:700;background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${u.avatar}</div>
-            <div>
-              <div style="font-size:13px;font-weight:500">${esc(u.name)}</div>
-              <div style="font-size:12px;color:var(--muted-2)">${esc(u.email)}</div>
-            </div>
-          </div>
-        </td>
-        <td style="font-size:13px;color:var(--muted)">${u.dept}</td>
-        <td><span class="badge" style="font-size:12px;padding:4px 12px;background:${u.role === "admin" ? "var(--tint)" : "var(--bg)"};color:${u.role === "admin" ? "var(--primary-fg)" : "var(--muted)"}">
-          ${u.role === "admin" ? "Administrador" : "Usuario"}</span></td>
-      </tr>`).join("");
-
-    const perms = PERMISSIONS[role].map((p) => `
+    const perms = ADMIN_PERMISSIONS.map((p) => `
       <div class="row" style="align-items:flex-start;gap:10px">
-        <span style="font-size:13px;font-weight:700;margin-top:1px;color:${p.ok ? "var(--primary-fg)" : "var(--lilac)"}">${p.ok ? "✓" : "✗"}</span>
-        <span style="font-size:13px;color:${p.ok ? "var(--text)" : "var(--lilac)"}">${p.text}</span>
+        <span style="font-size:13px;font-weight:700;margin-top:1px;color:${p.ok ? "var(--primary-fg)" : "var(--muted)"}">${p.ok ? "✓" : "✗"}</span>
+        <span style="font-size:13px;color:${p.ok ? "var(--text)" : "var(--muted)"}">${p.text}</span>
       </div>`).join("");
 
     return `
       <div class="page" style="--w:1200px">
         <div style="margin-bottom:36px">
           <div class="eyebrow">Cuenta</div>
-          <h1 class="page-title">Perfil de usuario</h1>
+          <h1 class="page-title">Perfil de administrador</h1>
         </div>
 
         <div class="grid-profile">
-          <div class="col-stack">
-            <div class="card" style="padding:28px 28px 24px">
-              <div class="row" style="gap:20px;margin-bottom:28px">
-                <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:#6a2cff;color:#b8b2ea">SN</div>
-                <div>
-                  <div style="font-family:var(--font-title);font-size:22px;font-weight:700;line-height:1.2">Sofía Navarro</div>
-                  <div style="font-size:14px;color:var(--muted);margin-top:4px">sofia@eventpro.es</div>
-                  <div style="margin-top:8px">
-                    <span class="badge" style="font-size:12px;font-weight:600;padding:4px 12px;background:${isAdmin ? "var(--primary)" : "var(--lilac-lt)"};color:${isAdmin ? "#fff" : "var(--muted)"}">
-                      ${isAdmin ? "Administrador" : "Usuario"}</span>
-                  </div>
-                </div>
+          <div class="card" style="padding:28px 28px 24px">
+            <div class="row" style="gap:20px;margin-bottom:28px">
+              <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:var(--primary);color:#fff">SN</div>
+              <div>
+                <div style="font-family:var(--font-title);font-size:22px;font-weight:700;line-height:1.2">Sofía Navarro</div>
+                <div style="font-size:14px;color:var(--muted);margin-top:4px">sofia.navarro@eventpro.co</div>
+                <div style="margin-top:8px"><span class="badge" style="font-size:12px;font-weight:600;padding:4px 12px;background:var(--primary);color:#fff">Administrador</span></div>
               </div>
-              <div class="form-grid-2" style="gap:16px;margin-bottom:20px">${fields}</div>
-              <button class="btn btn-primary" style="padding:10px 24px">Guardar cambios</button>
             </div>
-
-            <div class="card">
-              <div style="padding:20px 24px 16px;border-bottom:1px solid var(--cream)">
-                <h2 style="font-size:16px;font-weight:600">Equipo</h2>
-                <p style="margin-top:4px;font-size:13px;color:var(--muted)">
-                  ${isAdmin ? "Como administrador puedes cambiar los roles del equipo." : "Solo los administradores pueden cambiar roles."}
-                </p>
-              </div>
-              <div class="table-scroll"><table class="table table-compact">
-                <thead><tr><th>Miembro</th><th>Departamento</th><th>Rol</th></tr></thead>
-                <tbody>${team}</tbody>
-              </table></div>
-            </div>
+            <div class="form-grid-2" style="gap:16px;margin-bottom:20px">${fields}</div>
+            <button class="btn btn-primary" style="padding:10px 24px">Guardar cambios</button>
           </div>
 
           <div class="col-stack">
-            <div class="card card-pad">
-              <h3 style="margin-bottom:6px;font-size:16px;font-weight:600">Tu rol actual</h3>
-              <p style="margin-bottom:20px;font-size:13px;color:var(--muted);line-height:1.5">
-                Cambia entre administrador y usuario para ver la diferencia de acceso.
-              </p>
-              <div class="toggle">
-                <button class="${isAdmin ? "active" : ""}" data-click="profile:setRole" data-role="admin">Administrador</button>
-                <button class="${!isAdmin ? "active" : ""}" data-click="profile:setRole" data-role="user">Usuario</button>
-              </div>
-              <div class="role-summary ${isAdmin ? "is-admin" : ""}">
-                <div class="role-summary-icon" style="background:${isAdmin ? "var(--primary-fg)" : "var(--lilac)"}">
-                  ${isAdmin ? icon("shield", 18, { color: "var(--lilac)" }) : icon("user", 18, { color: "var(--text)" })}
-                </div>
-                <div>
-                  <div style="font-size:15px;font-weight:600">${isAdmin ? "Acceso total" : "Acceso limitado"}</div>
-                  <div style="font-size:12px;color:var(--muted)">${isAdmin ? "Puedes gestionar todo" : "Solo tus eventos asignados"}</div>
-                </div>
-              </div>
-            </div>
-
             <div class="card card-pad">
               <h3 class="card-title">Permisos del rol</h3>
               <div class="form-stack" style="gap:10px">${perms}</div>
@@ -151,7 +73,3 @@ const ProfilePage = {
       </div>`;
   },
 };
-
-registerClick({
-  "profile:setRole": (el) => { App.role = el.dataset.role; rerender(); },
-});

@@ -1,13 +1,19 @@
 /* ==========================================================
-   pages/admin/calendar.js — Calendario mensual de eventos
+   pages/manager/calendar.js — Calendario mensual de eventos (herramienta del Agente)
    ========================================================== */
 
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-const CalendarPage = {
-  year: 2026,
-  month: 8,          // 0 = enero … 8 = septiembre
+const MgrCalendarPage = {
+  // Abre en el mes del próximo evento (o del último, si ya pasaron todos)
+  ...(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const sorted = [...Data.events].sort((a, b) => a.date.localeCompare(b.date));
+    const ref = sorted.find((e) => parseDate(e.date) >= today) || sorted[sorted.length - 1];
+    const d = ref ? parseDate(ref.date) : today;
+    return { year: d.getFullYear(), month: d.getMonth() };   // month: 0 = enero … 11 = diciembre
+  })(),
   selected: null,    // fecha "YYYY-MM-DD" seleccionada
 
   dateString(day) {
@@ -62,7 +68,7 @@ const CalendarPage = {
             </div>
             <div style="padding:8px 12px;background:var(--paper)">
               <div style="font-size:12px;color:var(--muted)">${esc(ev.time)} · ${esc(ev.location.split(",")[0])}</div>
-              <div style="font-size:12px;color:var(--muted-2);margin-top:3px">${ev.registered} / ${ev.capacity} asistentes</div>
+              <div style="font-size:12px;color:var(--muted-2);margin-top:3px">${ev.registered} / ${ev.capacity} inscritos · ${esc(priceLabel(ev))} · ${esc(AVAIL[ev.availability] || "")}</div>
             </div>
           </div>`).join("");
 
@@ -98,7 +104,7 @@ const CalendarPage = {
 
     return `
       <div class="page" style="--w:1680px">
-        ${pageHeader({ eyebrow: "Vista", title: "Calendario" })}
+        ${pageHeader({ eyebrow: "Operación", title: "Calendario de eventos", subtitle: "Todos los eventos de la plataforma por fecha." })}
 
         <div class="grid-calendar">
           <div class="card">
@@ -127,16 +133,16 @@ const CalendarPage = {
 
 registerClick({
   "calendar:prev": () => {
-    if (CalendarPage.month === 0) { CalendarPage.month = 11; CalendarPage.year--; } else { CalendarPage.month--; }
+    if (MgrCalendarPage.month === 0) { MgrCalendarPage.month = 11; MgrCalendarPage.year--; } else { MgrCalendarPage.month--; }
     rerender();
   },
   "calendar:next": () => {
-    if (CalendarPage.month === 11) { CalendarPage.month = 0; CalendarPage.year++; } else { CalendarPage.month++; }
+    if (MgrCalendarPage.month === 11) { MgrCalendarPage.month = 0; MgrCalendarPage.year++; } else { MgrCalendarPage.month++; }
     rerender();
   },
   "calendar:toggle": (el) => {
-    CalendarPage.selected = CalendarPage.selected === el.dataset.date ? null : el.dataset.date;
+    MgrCalendarPage.selected = MgrCalendarPage.selected === el.dataset.date ? null : el.dataset.date;
     rerender();
   },
-  "calendar:set": (el) => { CalendarPage.selected = el.dataset.date; rerender(); },
+  "calendar:set": (el) => { MgrCalendarPage.selected = el.dataset.date; rerender(); },
 });

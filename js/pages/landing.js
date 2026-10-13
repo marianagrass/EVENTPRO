@@ -2,11 +2,16 @@
    pages/landing.js — Pantalla de bienvenida (elige Admin o Usuario)
    ========================================================== */
 
-const LANDING_STATS = [
-  { value: "7",     label: "Eventos activos" },
-  { value: "1.5K+", label: "Asistentes" },
-  { value: "5",     label: "Tipos de evento" },
-];
+// Cifras del Home (se calculan con los datos de ejemplo)
+const LANDING_STATS = (() => {
+  const live = Data.events.filter((e) => !["completado", "cancelado"].includes(e.status));
+  const people = Data.events.reduce((s, e) => s + e.registered, 0);
+  return [
+    { value: String(live.length), label: "Eventos activos" },
+    { value: `${(people / 1000).toFixed(1).replace(".", ",")}K+`, label: "Asistentes" },
+    { value: String(new Set(Data.events.map((e) => e.type)).size), label: "Tipos de evento" },
+  ];
+})();
 
 const LandingPage = {
   render() {

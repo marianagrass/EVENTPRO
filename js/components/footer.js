@@ -10,10 +10,8 @@
 const FOOTER_LINKS = {
   quick: [
     { label: "Explorar eventos", href: "#g-events", click: "footer:scroll", target: "g-events" },
-    // "Calendario" es solo para cuentas: el guard pide iniciar sesión y muestra este mensaje
-    { label: "Calendario", href: "#", click: "guest:calendar", requiresAuth: true, reason: "Inicia sesión para ver el calendario de eventos." },
-    { label: "Crear cuenta", href: "#", click: "auth:open" },
-    { label: "Portal de organizadores (Agentes)", href: "#", click: "auth:open", suggest: "manager",
+    { label: "Crear cuenta", href: "#", click: "auth:open", guestOnly: true },      // se oculta con sesión iniciada
+    { label: "Portal de organizadores (Agentes)", href: "#", click: "auth:open", suggest: "manager", guestOnly: true,
       reason: "El portal de organizadores es para Agentes. Elige «Agente» para continuar." },
   ],
   support: [
@@ -79,7 +77,7 @@ const PublicFooter = {
     return `
       <nav class="pf-col" aria-labelledby="${id}">
         <h3 id="${id}">${title}</h3>
-        <ul>${links.map((l) => this.link(l)).join("")}</ul>
+        <ul>${links.filter((l) => !l.guestOnly || !Session.isAuthenticated).map((l) => this.link(l)).join("")}</ul>
         ${extra}
       </nav>`;
   },
@@ -99,7 +97,7 @@ const PublicFooter = {
             <div class="pf-col pf-brand">
               <div class="g-brand"><div class="brand-logo"><span>E</span></div><div class="brand-name">EventPro</div></div>
               <p>EventPro es la plataforma central para descubrir y vivir los mejores eventos universitarios:
-                 conciertos, torneos, congresos y todo lo que pasa en tu campus, en un solo lugar.</p>
+                 fiestas, conciertos, torneos y todo lo que pasa en tu campus, en un solo lugar.</p>
             </div>
 
             ${this.column("pf-h-quick", "Enlaces rápidos", FOOTER_LINKS.quick)}
@@ -118,11 +116,17 @@ const PublicFooter = {
   },
 };
 
+/** Baja a una sección del Home. Si el usuario está en «Mi panel», lo devuelve primero al Home. */
+function scrollToSection(id) {
+  if (Session.isUser && UserApp.view !== "home") { UserApp.view = "home"; App.render({ resetScroll: true }); }
+  const t = document.getElementById(id);
+  if (t) setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+}
+
 registerClick({
   "footer:scroll": (el, e) => {
     e.preventDefault();
-    const t = document.getElementById(el.dataset.target);
-    if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToSection(el.dataset.target);
   },
   "footer:top": (el, e) => {
     e.preventDefault();
@@ -132,11 +136,4 @@ registerClick({
   "notice:open": (el, e) => { e.preventDefault(); Notice.key = el.dataset.key; rerender(); },
   "notice:close": () => { Notice.key = null; rerender(); },
 
-  // "Calendario": el guard ya pidió login; si hay sesión, llevamos a la pantalla que corresponda
-  "guest:calendar": (el, e) => {
-    e.preventDefault();
-    if (Session.role === "admin") { App.mode = "admin"; App.adminView = "calendar"; }
-    else if (Session.role !== "guest") App.mode = Session.role;
-    App.render({ resetScroll: true });
-  },
 });

@@ -1,23 +1,24 @@
 /* ==========================================================
    app.js — Estado global, navegación y dibujado de la página
    Se carga al final, cuando ya existen todas las páginas.
+
+   App.mode decide qué se dibuja:
+     "guest"   → Home (visitante)
+     "user"    → el MISMO Home con Navbar de usuario; «Mi panel» (AccountPage) desde el avatar
+     "manager" → Panel del Agente (operación total de eventos)
+     "admin"   → Panel del Admin (finanzas y gestión de cuentas)
    ========================================================== */
 
 const App = {
   mode: "guest",        // "guest" | "user" | "manager" | "admin"
-  role: "admin",        // rol dentro del panel: "admin" | "user"
   adminView: "dashboard",
 
-  /* Páginas del panel de administrador */
+  /* Páginas del panel de administrador: solo finanzas y cuentas */
   adminPages() {
     return {
       dashboard: DashboardPage,
-      events:    EventsPage,
-      calendar:  CalendarPage,
-      attendees: AttendeesPage,
-      tasks:     TasksPage,
+      accounts:  AccountsPage,
       profile:   ProfilePage,
-      agente:    AgentPage,
     };
   },
 
@@ -77,10 +78,8 @@ function rerender() { App.render(); }
 
 /* ---------- Navegación ---------- */
 registerClick({
-  "app:goAdmin": () => { App.mode = "admin"; App.render({ resetScroll: true }); },
-  "app:goUser":  () => { App.mode = "user";  App.render({ resetScroll: true }); },
   "nav:admin": (el) => { App.adminView = el.dataset.view; App.render({ resetScroll: true }); },
-  "nav:user":  (el) => { UserApp.view = el.dataset.view;  App.render({ resetScroll: true }); },
+  // "nav:user" vive en pages/user/user-app.js y "nav:manager" en pages/manager/manager.js
 });
 
 /* ---------- Arranque ---------- */

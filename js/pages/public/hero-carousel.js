@@ -14,7 +14,7 @@ function bigImage(url, w = 1600) {
 
 const HERO_FALLBACK = {
   tag: "EventPro 2026", title: "Conecta con los eventos que importan", highlight: "eventos que importan",
-  text: "Descubre, gestiona y vive los mejores eventos académicos, culturales y deportivos de tu institución.",
+  text: "Descubre y vive las mejores fiestas, conciertos y eventos de tu universidad.",
   accent: "#6a2cff", image: "", ev: null,
 };
 
@@ -59,9 +59,13 @@ const HeroCarousel = {
       </div>` : "";
 
     // Con evento: Inscribirme / Ver detalles (piden login). Sin evento: Crear cuenta / Ver eventos.
+    const auth = Session.isAuthenticated ? "" : "data-requires-auth";   // visitante: el guard pide login; usuario: abre el modal
+    const mine = Session.isUser && s.ev && UserApp.isRegistered(s.ev.id);
     const actions = s.ev ? `
-      <button class="btn btn-accent btn-xl" data-requires-auth data-click="guest:register" data-id="${esc(s.ev.id)}">Inscribirme ${icon("right", 16, { width: 2.8 })}</button>
-      <button class="btn btn-glass btn-xl" data-requires-auth data-click="guest:details" data-id="${esc(s.ev.id)}">Ver detalles</button>` : `
+      ${mine
+        ? `<button class="btn btn-accent btn-xl" data-click="event:details" data-id="${esc(s.ev.id)}">Ya estás inscrito ${icon("check", 16, { width: 3 })}</button>`
+        : `<button class="btn btn-accent btn-xl" ${auth} data-click="event:register" data-id="${esc(s.ev.id)}">Inscribirme ${icon("right", 16, { width: 2.8 })}</button>`}
+      <button class="btn btn-glass btn-xl" ${auth} data-click="event:details" data-id="${esc(s.ev.id)}">Ver detalles</button>` : `
       <button class="btn btn-accent btn-xl" data-click="auth:open">Crear cuenta ${icon("right", 16, { width: 2.8 })}</button>
       <button class="btn btn-glass btn-xl" data-click="guest:toEvents">Ver eventos</button>`;
 
@@ -95,7 +99,7 @@ const HeroCarousel = {
     return `
       <section class="hero-carousel ${stopped ? "is-paused" : ""}" style="--dur:${this.DURATION}ms"
                aria-roledescription="carousel" aria-label="Eventos destacados">
-        <h1 class="sr-only">EventPro: eventos universitarios, culturales y deportivos</h1>
+        <h1 class="sr-only">EventPro: fiestas, conciertos y eventos universitarios</h1>
         <div class="hero-slides" aria-live="off">${slides.map((s, i) => this.renderSlide(s, i)).join("")}</div>
 
         <div class="hero-ui">
@@ -125,7 +129,7 @@ const HeroCarousel = {
     // Estado que no sobrevive a un nuevo dibujado
     this.holds.delete("hover");
     this.holds.delete("focus");
-    if (Guard.open || Notice.key) this.holds.add("modal"); else this.holds.delete("modal");
+    if (Guard.open || Notice.key || EventModal.isOpen) this.holds.add("modal"); else this.holds.delete("modal");
     if (document.hidden) this.holds.add("tab"); else this.holds.delete("tab");
 
     if (!this._bound) {            // se registra una sola vez
