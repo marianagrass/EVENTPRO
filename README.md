@@ -12,7 +12,7 @@ El frontend no usa frameworks; el backend es Node/Express con PostgreSQL (Neon).
 
 Otra dirección de API: define `window.EVENTPRO_API_URL` antes de los scripts (ver `js/config.js`).
 
-**Novedades de V8 (pagos y cálculo):** checkout con pago simulado, zonas y puntos, fila virtual, comisiones del Agente, reporte de ingresos 2026 por integral, estados «Últimos cupos/Agotado» y precios dinámicos. Todo explicado en **[`docs/PAGOS_Y_CALCULO.md`](docs/PAGOS_Y_CALCULO.md)**.
+**Novedades(pagos y cálculo):** checkout con pago simulado, zonas y puntos, fila virtual, comisiones del Agente, reporte de ingresos 2026 por integral, estados «Últimos cupos/Agotado» y precios dinámicos. Todo explicado en **[`docs/PAGOS_Y_CALCULO.md`](docs/PAGOS_Y_CALCULO.md)**.
 
 > Las fuentes y las fotos de los eventos vienen de internet; sin conexión la app funciona con fuentes del sistema y sin fotos.
 
@@ -41,7 +41,7 @@ eventpro-html/
 ```
 **El orden de los `<script>` en `index.html` importa:** `config` → `data` → `utils` → componentes → páginas → `app`.
 
-## Roles y navegación (v6)
+## Roles y navegación
 | Rol | Qué ve | Archivos |
 |---|---|---|
 | **Visitante / Usuario** | El **mismo Home** (carrusel, buscador, filtros). Con sesión, el Navbar muestra el avatar con menú (Mi panel, Mis inscripciones, Historial, Perfil y configuración, Cerrar sesión) y las tarjetas muestran «Inscrito». «Mi panel» es una vista aparte con botón «Volver a explorar eventos». | `pages/public/guest-home.js`, `pages/user/user-app.js`, `pages/user/user-account.js` |
