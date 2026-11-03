@@ -1,110 +1,131 @@
 /* ==========================================================
-   core/session.js — Sesión (simulada) y Guard de acceso
-   Roles: "user" | "manager" (Agente) | "admin". Sin sesión = guest.
-   La seguridad real va en el backend (ver /backend/middleware.js).
+   core/session.js — Estado de autenticación (el "AuthContext" de EventPro)
 
-   Flujo "visitante → login → evento":
-     1. El visitante pulsa «Inscribirse» / «Ver detalles» (data-requires-auth).
-     2. Guard.promptLogin guarda la intención: Guard.pending = { eventId }.
-     3. Al iniciar sesión, Guard.resume(role) entra a la sesión, vuelve a dibujar el Home y
-        recién entonces abre EventModal con ese evento. Las dos piezas de estado
-        (Guard = autenticación, EventModal = evento abierto) son independientes.
+   Session guarda QUIÉN es el usuario y su rol; lo llenan los formularios de AuthModal
+   al recibir la respuesta de AuthApi (backend real o mock). No hay accesos directos por rol.
+
+   Flujo completo:
+     formulario ─► AuthModal.onLogin / onRegister ─► Session.login / Session.register
+        ─► AuthApi (POST /api/auth/...) ─► Session.set({ token, user }) ─► AuthFlow.enter(user)
+        ─► Admin → Finanzas · Agente → Dashboard operativo · Usuario → Home (+ evento pendiente)
+
+   Visitante que pulsa «Inscribirse»: Guard guarda { eventId } y abre AuthModal. Al autenticarse,
+   AuthFlow.enter vuelve a abrir EventModal con ese evento (no se pierde el hilo).
    ========================================================== */
+
+/* Rol que manda el backend → rol que usa la interfaz. Cualquier otro valor se rechaza. */
+const ROLE_FROM_API = { user: "user", agent: "manager", admin: "admin" };
+
 const Session = {
-  user: null,
+  user: null,                       // { id, name, email, role: "user" | "manager" | "admin" }
   role: "guest",
-  USERS: {
-    user:    { id: "u-user",  name: "Carlos Mejía",  role: "user" },
-    manager: { id: "u-agent", name: "Carmen López",  role: "manager" },
-    admin:   { id: "u-admin", name: "Sofía Navarro", role: "admin" },
-  },
+  token: null,
+
   get isAuthenticated() { return !!this.user; },
   get isUser() { return this.role === "user"; },
   get firstName() { return this.user ? this.user.name.split(" ")[0] : ""; },
 
-  /** Estado de la cuenta en la tabla de cuentas del Admin: "activo" | "suspendido" | "eliminada" */
-  accountState(role) {
-    const u = this.USERS[role];
-    if (role === "admin") return "activo";
-    const acc = Data.accounts.find((a) => a.id === u.id);
-    return acc ? acc.status : "eliminada";
+  /** Convierte la respuesta del backend en un usuario válido o lanza error (nunca asume un rol) */
+  normalizeUser(raw) {
+    const role = raw && ROLE_FROM_API[raw.role];
+    if (!raw || !raw.id || !raw.name || !raw.email || !role) throw new AuthError("Respuesta inesperada del servidor.", 500, "BAD_RESPONSE");
+    return { id: String(raw.id), name: String(raw.name), email: String(raw.email), role };
   },
 
-  login(role) { this.user = this.USERS[role]; this.role = role; },
-  logout() { this.user = null; this.role = "guest"; },
+  /** Guarda la sesión (y el token, si el backend usa token en vez de cookie) */
+  set({ token, user }) {
+    this.user = this.normalizeUser(user);
+    this.role = this.user.role;
+    this.token = token || null;
+    try {
+      if (this.token && !AuthConfig.USE_COOKIES) sessionStorage.setItem(AuthConfig.STORAGE_KEY, this.token);
+    } catch (_) { /* almacenamiento bloqueado: la sesión dura hasta recargar */ }
+    if (this.role === "user") UserApp.loadFor(this.user);
+    return this.user;
+  },
+
+  clear() {
+    this.user = null; this.role = "guest"; this.token = null;
+    try { sessionStorage.removeItem(AuthConfig.STORAGE_KEY); } catch (_) { /* nada */ }
+  },
+
+  /* ----- operaciones (devuelven el usuario o lanzan AuthError) ----- */
+  async login({ email, password }) {
+    const data = await AuthApi.login({ email: String(email).trim().toLowerCase(), password });
+    return this.set(data);
+  },
+
+  async register({ name, email, password }) {
+    // El rol NO se envía: el servidor siempre crea cuentas "user". Agentes y admins los gestiona el Admin.
+    const data = await AuthApi.register({ name: String(name).trim(), email: String(email).trim().toLowerCase(), password });
+    return this.set(data);
+  },
+
+  /** Al abrir la página: si quedó un token guardado, pregunta al backend quién es */
+  async restore() {
+    let token = null;
+    try { token = sessionStorage.getItem(AuthConfig.STORAGE_KEY); } catch (_) { /* nada */ }
+    if (!token && !AuthConfig.USE_COOKIES) return null;
+    try {
+      const { user } = await AuthApi.me(token);
+      return this.set({ token, user });
+    } catch (_) {
+      this.clear();
+      return null;
+    }
+  },
+
+  async logout() {
+    const token = this.token;
+    this.clear();
+    try { await AuthApi.logout(token); } catch (_) { /* aunque falle, la sesión local ya se cerró */ }
+  },
 };
 
+/* Si el backend responde 401 con sesión iniciada, el token venció: volver a pedir login */
+AuthApi.onUnauthorized = () => {
+  if (!Session.isAuthenticated) return;
+  Session.clear(); EventModal.reset(); CheckoutModal.reset(); App.mode = "guest"; UserApp.view = "home";
+  App.render({ resetScroll: true });
+  AuthModal.open({ view: "login", reason: "Tu sesión expiró. Inicia sesión de nuevo." });
+};
+
+/* ==========================================================
+   AuthFlow — a dónde va cada rol tras autenticarse
+   ========================================================== */
+const AuthFlow = {
+  enter(user, pending = null) {
+    App.mode = user.role;                                   // "user" | "manager" | "admin"
+    if (user.role === "admin")   App.adminView = "dashboard";   // Finanzas y estadísticas
+    if (user.role === "manager") ManagerApp.view = "inicio";    // Dashboard operativo
+    if (user.role === "user")    UserApp.view = "home";         // el mismo Home, ahora con su avatar
+    EventModal.reset(); CheckoutModal.reset();
+    const resume = user.role === "user" && pending && pending.eventId;
+    App.render({ resetScroll: !resume });                   // si vuelve a un evento, conserva el scroll del Home
+    if (resume) EventModal.open(pending.eventId);           // ← "sin perder el hilo"
+  },
+};
+
+/* ==========================================================
+   Guard — intercepta acciones que exigen sesión (data-requires-auth)
+   ========================================================== */
 const Guard = {
-  open: false,
-  pending: null,                         // intención del visitante: { eventId } (si venía de un evento)
-  reason: null,                          // mensaje opcional del modal (data-reason)
-  suggest: null,                         // rol a resaltar en el modal (data-suggest)
-  error: null,                           // aviso si la cuenta está suspendida o eliminada
+  get open() { return AuthModal.isOpen; },
   canAccess(mode) { return mode === "guest" || Session.role === mode; },
-
   promptLogin(el) {
-    this.pending = el.dataset.id ? { eventId: el.dataset.id } : null;
-    this.reason = el.dataset.reason || null;
-    this.suggest = el.dataset.suggest || null;
-    this.error = null;
-    this.open = true; rerender();
-  },
-  close() { this.open = false; this.pending = null; this.reason = null; this.suggest = null; this.error = null; rerender(); },
-
-  resume(role) {
-    // Las cuentas suspendidas o eliminadas por el Admin no pueden entrar
-    const state = Session.accountState(role);
-    if (state !== "activo") {
-      this.error = state === "suspendido"
-        ? "Esta cuenta está suspendida. Contacta al administrador de la plataforma."
-        : "Esta cuenta ya no existe.";
-      rerender();
-      return;
-    }
-
-    const pending = this.pending;
-    this.open = false; this.pending = null; this.reason = null; this.suggest = null; this.error = null;
-    Session.login(role);
-    App.mode = role;
-    if (role === "user") UserApp.view = "home";           // el usuario sigue en el MISMO Home
-    if (role === "manager") ManagerApp.view = "inicio";
-    if (role === "admin") App.adminView = "dashboard";
-    EventModal.reset();                                     // parte siempre de un modal limpio
-    App.render({ resetScroll: !(role === "user" && pending) });
-
-    // Retoma la acción que el visitante había intentado: abre el evento ya con sesión iniciada
-    if (role === "user" && pending && pending.eventId) EventModal.open(pending.eventId);
-  },
-
-  modal() {
-    if (!this.open) return "";
-    const opt = (role, ic, title, text) => `
-      <button class="btn btn-outline btn-block ${this.suggest === role ? "is-suggested" : ""}" style="justify-content:flex-start;gap:12px;padding:14px 16px;text-align:left" data-click="auth:login" data-role="${role}">
-        ${icon(ic, 20)}<span><strong style="display:block">${title}</strong><small style="color:var(--muted)">${text}</small></span>
-      </button>`;
-    return `
-      <div class="modal-backdrop" data-click="auth:close" data-backdrop>
-        <div class="modal modal-confirm" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Iniciar sesión">
-          <h3 class="modal-confirm-title">Inicia sesión para continuar</h3>
-          <p class="modal-confirm-text">${esc(this.reason || "Para inscribirte o ver el detalle de un evento necesitas una cuenta.")}</p>
-          ${this.error ? `<div class="auth-error" role="alert">${esc(this.error)}</div>` : ""}
-          <div style="display:grid;gap:10px;margin:18px 0">
-            ${opt("user", "user", "Usuario", "Explora e inscríbete a eventos")}
-            ${opt("manager", "tasks", "Agente", "Opera los eventos: crea, edita y controla asistentes")}
-            ${opt("admin", "shield", "Administrador", "Finanzas de la plataforma y gestión de cuentas")}
-          </div>
-          <button class="btn btn-outline btn-block" data-click="auth:close">Ahora no</button>
-        </div>
-      </div>`;
+    AuthModal.open({
+      view: "login",
+      pending: el.dataset.id ? { eventId: el.dataset.id } : null,
+      reason: el.dataset.reason || null,
+    });
   },
 };
 
 registerClick({
-  "auth:open":  (el) => { Guard.reason = el.dataset.reason || null; Guard.suggest = el.dataset.suggest || null; Guard.error = null; Guard.open = true; rerender(); },
-  "auth:close": () => Guard.close(),
-  "auth:login": (el) => Guard.resume(el.dataset.role),
   "app:logout": () => {
-    Session.logout(); EventModal.reset(); UserApp.view = "home";
-    App.mode = "guest"; App.render({ resetScroll: true });
+    Session.logout();
+    EventModal.reset(); CheckoutModal.reset(); AuthModal.reset();
+    UserApp.view = "home"; App.mode = "guest";
+    App.render({ resetScroll: true });
   },
 });

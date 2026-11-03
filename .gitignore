@@ -1,0 +1,8 @@
+# Secretos: NUNCA subir a Git (la cadena de Neon es una contraseña)
+.env
+.env.*
+!.env.example
+backend/.env
+node_modules/
+*.log
+.DS_Store

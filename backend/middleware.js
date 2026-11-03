@@ -2,6 +2,8 @@
 // aforo, asistentes). La tabla event_agents y requireEventAssignment quedan solo como referencia del modelo
 // anterior; para el nuevo modelo basta requireRole("agent"). El rol admin ya NO debe poder mutar eventos:
 // limítalo a /admin/stats (finanzas) y /admin/accounts (listar, activar/suspender, eliminar).
+// El esquema vigente está en backend/db/ (001_schema.sql); la migración antigua quedó en backend/legacy/.
+// Rol en la BD: "agent". Rol en el frontend: "manager". Mapéalo en un solo lugar.
 // Referencia (Express). El frontend NO es seguridad: esto sí.
 const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user.role) ? next() : res.sendStatus(403);

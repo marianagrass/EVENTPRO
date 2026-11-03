@@ -13,7 +13,7 @@ const ADMIN_PERMISSIONS = [
 const PROFILE_FIELDS = [
   { label: "Nombre",       value: "Sofía" },
   { label: "Apellido",     value: "Navarro" },
-  { label: "Correo",       value: "sofia.navarro@eventpro.co" },
+  { label: "Correo",       value: "admin@eventpro.com" },
   { label: "Teléfono",     value: "+57 311 234 5678" },
   { label: "Departamento", value: "Dirección" },
   { label: "Ciudad",       value: "Cali" },
@@ -46,7 +46,7 @@ const ProfilePage = {
               <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:700;background:var(--primary);color:#fff">SN</div>
               <div>
                 <div style="font-family:var(--font-title);font-size:22px;font-weight:700;line-height:1.2">Sofía Navarro</div>
-                <div style="font-size:14px;color:var(--muted);margin-top:4px">sofia.navarro@eventpro.co</div>
+                <div style="font-size:14px;color:var(--muted);margin-top:4px">admin@eventpro.com</div>
                 <div style="margin-top:8px"><span class="badge" style="font-size:12px;font-weight:600;padding:4px 12px;background:var(--primary);color:#fff">Administrador</span></div>
               </div>
             </div>

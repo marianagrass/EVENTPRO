@@ -50,6 +50,9 @@
 .registered-tag { color: #fff; min-height: 44px; }
 .cta-btn:disabled { opacity: .55; cursor: not-allowed; }
 
+/* Con cualquier modal abierto, la página de fondo no se desplaza */
+.main.guest:has(.modal-backdrop), .main:has(.modal-backdrop) { overflow: hidden; }
+
 /* ----- Modal de evento (EventModal) ----- */
 .evm-backdrop { z-index: 60; }
 .evm, .modal.evm { --w: 520px; padding: 0 !important; border-radius: 26px; overflow: hidden; outline: none; display: flex; flex-direction: column; max-height: min(92vh, 760px); }
@@ -144,7 +147,7 @@
 
 /* ----- Admin: Finanzas ----- */
 .fin-kpi { position: relative; }
-.fin-kpi .kpi-value { font-size: clamp(26px, 2.3vw, 34px); }
+.fin-kpi .kpi-value { font-size: clamp(24px, 2.3vw, 34px); white-space: nowrap; }
 .fin-kpi .kpi-label { padding-right: 44px; }
 .fin-kpi-ic { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--tint); color: var(--primary-fg); }
 .fin-grid2 { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 24px; margin-bottom: 24px; }

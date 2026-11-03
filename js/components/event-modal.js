@@ -27,11 +27,8 @@ const EventModal = {
   reset() { this.eventId = null; this.done = false; this.error = ""; this._focus = false; },
 
   open(id) {
-    // Sin sesión de usuario no hay inscripción: se recuerda el evento y se pide iniciar sesión
-    if (!Session.isUser) {
-      Guard.pending = { eventId: id }; Guard.reason = null; Guard.suggest = "user"; Guard.error = null; Guard.open = true;
-      rerender(); return;
-    }
+    // Sin sesión de usuario no hay inscripción: se recuerda el evento y se abre el login (vuelve aquí al entrar)
+    if (!Session.isUser) { AuthModal.open({ view: "login", pending: { eventId: id } }); return; }
     if (!Data.events.some((e) => e.id === id)) return;
     this.eventId = id; this.done = false; this.error = ""; this._focus = false;
     rerender();
@@ -39,19 +36,21 @@ const EventModal = {
 
   close() { this.reset(); rerender(); },
 
+  /** «Confirmar inscripción» abre el Checkout: ahí se elige zona, puntos y método de pago (la inscripción se guarda al pagar). */
   confirm() {
     const ev = this.event;
     if (!ev) return;
-    const res = UserApp.register(ev.id);
-    if (res !== true) { this.error = res; rerender(); return; }
-    this.done = true; this.error = "";
-    rerender();
+    const id = ev.id;
+    this.reset();
+    CheckoutModal.open(id);
   },
 
-  cancelRegistration() {
+  async cancelRegistration() {
     const ev = this.event;
     if (!ev) return;
-    UserApp.unregister(ev.id);
+    this.error = "";
+    const ok = await UserApp.unregister(ev.id);
+    if (ok === false) { this.error = "No se pudo cancelar la inscripción. Inténtalo de nuevo."; rerender(); return; }
     this.done = false;
     rerender();
   },
@@ -61,14 +60,14 @@ const EventModal = {
     return `<div class="evm-meta">${icon(ic, 16, { width: 2 })}<span>${text}</span></div>`;
   },
 
-  infoBox(spots, state) {
+  infoBox(spots, state, state_ = "disponible") {
     // state: open | paused | closed
     if (state !== "open") {
       return `<div class="evm-info is-full" role="status">${icon("clock", 16)}<span>${state === "paused" ? "Las inscripciones están pausadas por ahora" : "Las inscripciones están cerradas"}</span></div>`;
     }
     if (spots <= 0) return `<div class="evm-info is-full" role="status">${icon("users", 16)}<span><strong>Agotado</strong>: ya no quedan cupos</span></div>`;
-    const low = spots <= 20;
-    return `<div class="evm-info ${low ? "is-low" : ""}" role="status">${icon(low ? "zap" : "users", 16)}<span>Quedan <strong>${spots} cupos</strong> disponibles</span></div>`;
+    const low = spots <= 20 || state_ === "ultimos_cupos";
+    return `<div class="evm-info ${low ? "is-low" : ""}" role="status">${icon(low ? "zap" : "users", 16)}<span>${state_ === "ultimos_cupos" ? "<strong>¡Últimos cupos!</strong> " : ""}Quedan <strong>${spots} cupos</strong> disponibles</span></div>`;
   },
 
   render() {
@@ -82,6 +81,7 @@ const EventModal = {
     const whenRaw = parseDate(ev.date).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     const when = whenRaw.charAt(0).toUpperCase() + whenRaw.slice(1);
     const price = ev.price > 0 ? cop(ev.price) : "Gratis";
+    const fromZone = ev.price > 0 ? `Desde <strong>${esc(price)}</strong> (zona general) · preferencial ×1,5 · VIP ×2,5` : `<strong>Gratis</strong>`;
 
     const head = `
       <div class="evm-hero" style="background:${tc.gradient}">
@@ -113,10 +113,10 @@ const EventModal = {
         <div class="evm-metas">
           ${this.metaRow("calendar", `${esc(when)} · ${esc(ev.time)}`)}
           ${this.metaRow("pin", esc(ev.location))}
-          ${this.metaRow("ticket", `Valor de la boleta: <strong>${esc(price)}</strong>`)}
+          ${this.metaRow("ticket", `Valor de la boleta: ${fromZone}`)}
         </div>
         ${ev.description ? `<p class="evm-desc">${esc(ev.description)}</p>` : ""}
-        ${this.infoBox(spots, state)}
+        ${this.infoBox(spots, state, ev.salesState)}
         ${this.error ? `<div class="auth-error" role="alert">${esc(this.error)}</div>` : ""}`;
 
       if (registered) {

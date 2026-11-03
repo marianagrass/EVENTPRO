@@ -21,6 +21,7 @@ const MgrEventsPage = {
   form: eventBlank(),
   formError: "",
   deleteId: null,
+  saving: false,
 
   filtered() {
     return Data.events.filter((e) => {
@@ -103,8 +104,8 @@ const MgrEventsPage = {
             <div class="form-grid-2">
               ${field("Aforo (cupos)", textInput({ key: "capacity", type: "number", value: f.capacity, handler: H, number: true, extra: 'min="1"' }),
                       this.editingId ? `Mínimo ${f.registered} (inscritos actuales)` : "Máximo de personas que pueden inscribirse")}
-              ${field("Precio por persona (COP)", textInput({ key: "price", type: "number", value: f.price, handler: H, number: true, extra: 'min="0" step="1000"' }),
-                      "0 = evento gratuito")}
+              ${field("Precio base B por persona (COP)", textInput({ key: "price", type: "number", value: f.price, handler: H, number: true, extra: 'min="0" step="1000"' }),
+                      `0 = evento gratuito · zona preferencial ×1,5 · VIP ×2,5${this.editingId && f.basePrice && f.basePrice !== f.price ? ` · base fijada por ti: ${cop(f.basePrice)}` : ""}`)}
             </div>
             ${field("Inscripciones", selectInput({ key: "availability", options: AVAIL, value: f.availability, handler: H }))}
             ${field("Imagen (URL, opcional)", textInput({ key: "image", value: f.image, handler: H }))}
@@ -112,7 +113,7 @@ const MgrEventsPage = {
           ${this.formError ? `<p class="auth-error" role="alert" style="margin-top:14px">${esc(this.formError)}</p>` : ""}
           <div class="modal-form-actions">
             <button class="btn btn-outline btn-block" data-click="events:closeModal">Cancelar</button>
-            <button class="btn btn-primary btn-block" data-click="events:save">${this.editingId ? "Guardar cambios" : "Crear evento"}</button>
+            <button class="btn btn-primary btn-block" data-click="events:save" ${this.saving ? "disabled" : ""}>${this.saving ? "Guardando…" : this.editingId ? "Guardar cambios" : "Crear evento"}</button>
           </div>
         </div>
       </div>`;
@@ -192,43 +193,54 @@ registerClick({
   },
   "events:closeModal": () => { MgrEventsPage.modal = false; rerender(); },
 
-  "events:save": () => {
+  "events:save": async () => {
     const f = MgrEventsPage.form;
     const fail = (msg) => { MgrEventsPage.formError = msg; rerender(); };
     if (!f.name.trim() || !f.date) return fail("El nombre y la fecha son obligatorios.");
     if (!(f.capacity >= 1)) return fail("El aforo debe ser de al menos 1 cupo.");
     if (f.capacity < f.registered) return fail(`El aforo no puede ser menor a los ${f.registered} inscritos.`);
     if (!(f.price >= 0)) return fail("El precio no puede ser negativo.");
+    if (MgrEventsPage.saving) return;
 
-    const data = { ...f, name: f.name.trim(), image: f.image.trim() || TYPE_IMAGES[f.type] };
-    if (MgrEventsPage.editingId) {
-      Data.events = Data.events.map((e) => (e.id === MgrEventsPage.editingId ? { ...e, ...data, id: e.id } : e));
-      // Mantiene el nombre del evento en la lista de asistentes
-      Data.attendees.forEach((a) => { if (a.eventId === MgrEventsPage.editingId) a.eventName = data.name; });
-    } else {
-      Data.events = [...Data.events, { ...data, id: "e" + Date.now(), registered: 0, is_public: true, featured: false }];
+    // Se guarda en la base de datos y luego se vuelve a leer: lo que se ve es lo que quedó guardado.
+    const payload = {
+      name: f.name.trim(), type_code: f.type, event_date: f.date, start_time: f.time, location: f.location,
+      description: f.description, image_url: f.image.trim() || TYPE_IMAGES[f.type], capacity: Number(f.capacity),
+      price_cop: Math.round(Number(f.price)), status: f.status, availability: f.availability, coordinator: f.coordinator,
+    };
+    MgrEventsPage.saving = true; MgrEventsPage.formError = ""; rerender();
+    try {
+      if (MgrEventsPage.editingId) await api.put(`/events/${MgrEventsPage.editingId}`, payload);
+      else await api.post("/events", { ...payload, created_by: Session.user.id });
+    } catch (e) {
+      MgrEventsPage.saving = false;
+      return fail(e.message);
     }
-    MgrEventsPage.modal = false;
-    rerender();
+    MgrEventsPage.saving = false; MgrEventsPage.modal = false;
+    Toast.show(MgrEventsPage.editingId ? "Evento actualizado." : "Evento creado.", "ok", 3000);
+    await syncData();
   },
 
   "events:askDelete":     (el) => { MgrEventsPage.deleteId = el.dataset.id; rerender(); },
   "events:cancelDelete":  () => { MgrEventsPage.deleteId = null; rerender(); },
-  "events:confirmDelete": () => {
+  "events:confirmDelete": async () => {
     const id = MgrEventsPage.deleteId;
-    Data.events = Data.events.filter((e) => e.id !== id);
-    Data.attendees = Data.attendees.filter((a) => a.eventId !== id);          // sus asistentes ya no existen
-    UserApp.registrations = UserApp.registrations.filter((x) => x !== id);    // ni las inscripciones del usuario
     MgrEventsPage.deleteId = null;
-    rerender();
+    if (await apiSend("DELETE", `/events/${id}`)) Toast.show("Evento eliminado.", "ok", 3000);
+    await syncData();
   },
 
   /* disponibilidad de inscripción (cerrar pide confirmación) */
-  "manager:avail": (el) => {
+  "manager:avail": async (el) => {
     const ev = ManagerApp.find(el.dataset.id); if (!ev) return;
-    if (el.dataset.value === "closed" && ev.availability !== "closed") ManagerApp.closeId = ev.id; else ev.availability = el.dataset.value;
-    rerender();
+    if (el.dataset.value === "closed" && ev.availability !== "closed") { ManagerApp.closeId = ev.id; rerender(); return; }
+    await apiSend("PUT", `/events/${ev.id}/availability`, { availability: el.dataset.value });
+    await syncData();
   },
-  "manager:confirmClose": () => { const ev = ManagerApp.find(ManagerApp.closeId); if (ev) ev.availability = "closed"; ManagerApp.closeId = null; rerender(); },
+  "manager:confirmClose": async () => {
+    const ev = ManagerApp.find(ManagerApp.closeId); ManagerApp.closeId = null;
+    if (ev) await apiSend("PUT", `/events/${ev.id}/availability`, { availability: "closed" });
+    await syncData();
+  },
   "manager:cancelClose":  () => { ManagerApp.closeId = null; rerender(); },
 });

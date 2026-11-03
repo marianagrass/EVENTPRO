@@ -114,7 +114,7 @@ const AccountPage = {
     const past = UserApp.past();
     if (!past.length) return this.emptyState("Todavía no tienes historial", "Cuando termine un evento en el que estés inscrito, aparecerá aquí.");
     const rows = past.map((ev) => {
-      const att = Data.attendees.find((a) => a.id === `au-${ev.id}`);
+      const att = Data.attendees.find((a) => a.userId === Session.user.id && a.eventId === ev.id);
       const went = !!(att && att.checkedInAt);
       return `
         <div class="card acct-row is-past">
@@ -208,6 +208,8 @@ const AccountPage = {
 
   afterRender() {
     if (UserApp.view === "asistente") AgentPage.afterRender();
+    CheckoutModal.afterRender();
+    EventModal.afterRender();            // si se abrió «Ver detalles» desde aquí, el foco entra al modal
   },
 };
 
@@ -217,17 +219,35 @@ registerInput({
 });
 
 registerClick({
-  "account:save": () => {
+  "account:save": async () => {
     const p = UserApp.profile;
     if (!p.nombre.trim()) { AccountPage.formError = "Escribe tu nombre."; AccountPage.saved = false; rerender(); return; }
     if (!/^\S+@\S+\.\S+$/.test(p.correo.trim())) { AccountPage.formError = "Escribe un correo válido."; AccountPage.saved = false; rerender(); return; }
+    const taken = Data.accounts.some((a) => a.id !== Session.user.id && a.email.toLowerCase() === p.correo.trim().toLowerCase());
+    if (taken) { AccountPage.formError = "Ese correo ya está en uso por otra cuenta."; AccountPage.saved = false; rerender(); return; }
     AccountPage.formError = "";
-    Session.user.name = `${p.nombre.trim()} ${p.apellido.trim()}`.trim();
-    const acc = Data.accounts.find((a) => a.id === Session.user.id);
-    if (acc) { acc.name = Session.user.name; acc.email = p.correo.trim(); }
-    AccountPage.saved = true;
-    rerender();
-    clearTimeout(AccountPage.savedTimer);
-    AccountPage.savedTimer = setTimeout(() => { AccountPage.saved = false; if (UserApp.view === "perfil") rerender(); }, 3000);
+    
+    const newName = `${p.nombre.trim()} ${p.apellido.trim()}`.trim();
+    const newEmail = p.correo.trim().toLowerCase();
+
+    try {
+      // --- NUEVO: Guardar perfil en la base de datos ---
+      const saved = await apiSend('PUT', `/accounts/${Session.user.id}/profile`, { name: newName, email: newEmail, phone: p.telefono, city: p.ciudad, institution: p.institucion });
+      if (!saved) { AccountPage.formError = "No se pudo guardar tu perfil. Inténtalo de nuevo."; AccountPage.saved = false; rerender(); return; }
+
+      // Actualizar sesión y estado local
+      Session.user.name = newName;
+      Session.user.email = newEmail;
+      const acc = Data.accounts.find((a) => a.id === Session.user.id);
+      if (acc) Object.assign(acc, { name: newName, email: newEmail, phone: p.telefono, city: p.ciudad, institution: p.institucion });
+      
+      AccountPage.saved = true;
+      rerender();
+      clearTimeout(AccountPage.savedTimer);
+      AccountPage.savedTimer = setTimeout(() => { AccountPage.saved = false; if (UserApp.view === "perfil") rerender(); }, 3000);
+    } catch (e) {
+      AccountPage.formError = "Error al guardar en la base de datos.";
+      rerender();
+    }
   },
 });

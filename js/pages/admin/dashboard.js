@@ -1,7 +1,8 @@
 /* ==========================================================
    pages/admin/dashboard.js — Finanzas y estadísticas globales (Admin)
    El Admin NO opera eventos: aquí solo ve métricas de toda la plataforma:
-     · Dinero recaudado (precio × inscritos de cada evento)
+     · Dinero recaudado (suma de lo pagado por cada inscrito)
+     · Reporte de ingresos por mes (integral) y monitor de tráfico (reports.js)
      · Ingresos por categoría (tipo de evento)
      · Crecimiento de usuarios registrados (cuentas con rol «user», por mes)
      · Ocupación global (inscritos / aforo)
@@ -130,7 +131,7 @@ const DashboardPage = {
         <td><div style="font-size:14px;font-weight:500;max-width:340px" class="ellipsis">${esc(e.name)}</div>
             <div style="font-size:12px;color:var(--muted)">${parseDate(e.date).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</div></td>
         <td><span class="chip acct-type" style="--c:${TYPE_COLOR[e.type]}">${esc(TYPE_LABEL[e.type])}</span></td>
-        <td style="font-size:13px">${esc(priceLabel(e))}</td>
+        <td style="font-size:13px">${esc(priceLabel(e))}${e.price > 0 ? `<div style="font-size:11px;color:var(--muted)">zona general</div>` : ""}</td>
         <td style="font-size:13px">${e.registered} / ${e.capacity}<div class="bar bar-thin" style="width:90px;margin-top:5px"><div class="bar-fill" style="width:${percent(e.registered, e.capacity)}%;background:${TYPE_COLOR[e.type]}"></div></div></td>
         <td style="font-size:14px;font-weight:700">${rev > 0 ? cop(rev) : "—"}</td>
         <td><span class="badge ${e.status === "completado" ? "st-completado" : "st-planificado"}">${e.status === "completado" ? "Realizado" : "Proyectado"}</span></td>
@@ -157,13 +158,17 @@ const DashboardPage = {
           </div>
         </div>
 
+        ${RevenueReport.render()}
+
         <div class="card fin-card" style="margin-bottom:24px">
           <div class="card-head"><h2>Ingresos por categoría</h2><span class="fin-note">Total ${cop(t.revenue)}</span></div>
           <div class="fin-pad fin-cats">${catRows || `<p class="fin-empty">Aún no hay ingresos.</p>`}</div>
         </div>
 
+        ${TrafficMonitor.render()}
+
         <div class="card">
-          <div class="card-head"><h2>Recaudo por evento</h2><span class="fin-note">Recaudo = precio × inscritos</span></div>
+          <div class="card-head"><h2>Recaudo por evento</h2><span class="fin-note">Recaudo real: lo pagado por cada inscrito</span></div>
           <div class="table-scroll"><table class="table">
             <thead><tr><th>Evento</th><th>Categoría</th><th>Precio</th><th>Ocupación</th><th>Recaudo</th><th>Estado</th></tr></thead>
             <tbody>${evRows}</tbody>

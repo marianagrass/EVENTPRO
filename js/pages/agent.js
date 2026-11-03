@@ -26,7 +26,7 @@ function agentReply(text) {
   }
   if (/cupo|quedan|disponible/.test(q)) {
     const ev = Data.events.find((e) => q.includes(normalize(e.name.split(/[:\s]/).slice(0, 2).join(" "))));
-    if (ev) { const n = UserApp.getSpots(ev.id); return `**${ev.name}** tiene **${n} cupos disponibles** de ${ev.capacity}${n <= 20 && n > 0 ? ". Quedan muy pocos, te recomiendo inscribirte pronto." : "."}`; }
+    if (ev) { if (ev.availability && ev.availability !== "open") return `Las inscripciones de **${ev.name}** están ${ev.availability === "paused" ? "pausadas" : "cerradas"} por ahora.`; const n = UserApp.getSpots(ev.id); return `**${ev.name}** tiene **${n} cupos disponibles** de ${ev.capacity}${n <= 20 && n > 0 ? ". Quedan muy pocos, te recomiendo inscribirte pronto." : "."}`; }
   }
   if (/inscrib|registr/.test(q)) {
     return "Es muy fácil: en el **Home** elige un evento y pulsa **Inscribirse**. Confirma tu cupo en la ventana que se abre y listo. Tus inscripciones las ves en **Mi panel → Mis inscripciones**.";

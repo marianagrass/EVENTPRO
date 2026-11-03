@@ -1,17 +1,20 @@
-# EventPro — HTML, CSS y JavaScript puro
+# EventPro — HTML, CSS y JavaScript puro + API Node/PostgreSQL
 
-Sistema de organización de eventos con cuatro experiencias: **Home** (visitantes y usuarios), **panel de Agente** (operación de eventos) y **panel de Administrador** (finanzas y cuentas).
-No usa frameworks, ni Node, ni instalación: solo HTML, CSS y JavaScript.
+Sistema de organización de eventos con cuatro experiencias: **Home** (visitantes y usuarios), **panel de Agente** (operación, comisiones y demanda) y **panel de Administrador** (finanzas, reportes y cuentas).
+El frontend no usa frameworks; el backend es Node/Express con PostgreSQL (Neon).
 
-## Cómo abrirlo
-1. Descomprime la carpeta.
-2. Haz doble clic en **`index.html`**. Se abre en tu navegador.
+## Cómo ejecutarlo
+1. `npm install`
+2. Copia `.env.example` como `.env` y pon tu `DATABASE_URL` de Neon.
+3. En el *SQL Editor* de Neon ejecuta, en orden: `backend/db/001_schema.sql`, `002_seed.sql`, **`004_payments.sql`** (y `005_payments_checks.sql` para verificar).
+4. `npm start` → API en `http://localhost:3000`.
+5. Abre `index.html` (mejor con la extensión *Live Server* de VS Code). Si el backend está apagado, la página lo avisa con un banner y un botón «Reintentar».
 
-Opcional, para desarrollar cómodo en Visual Studio Code: instala la extensión **Live Server**,
-clic derecho sobre `index.html` → **Open with Live Server**. La página se recarga sola al guardar.
+Otra dirección de API: define `window.EVENTPRO_API_URL` antes de los scripts (ver `js/config.js`).
 
-> Las fuentes (Fraunces e Inter) y las fotos de los eventos vienen de internet. Sin conexión
-> la app funciona igual, pero con fuentes del sistema y sin fotos.
+**Novedades de V8 (pagos y cálculo):** checkout con pago simulado, zonas y puntos, fila virtual, comisiones del Agente, reporte de ingresos 2026 por integral, estados «Últimos cupos/Agotado» y precios dinámicos. Todo explicado en **[`docs/PAGOS_Y_CALCULO.md`](docs/PAGOS_Y_CALCULO.md)**.
+
+> Las fuentes y las fotos de los eventos vienen de internet; sin conexión la app funciona con fuentes del sistema y sin fotos.
 
 ## Estructura
 ```
@@ -20,20 +23,23 @@ eventpro-html/
 ├── css/
 │   ├── base.css               colores (variables), reset, layout general
 │   ├── components.css         botones, tarjetas, badges, formularios, modales, tablas, sidebar
-│   └── pages.css              estilos propios de cada pantalla
+│   ├── pages.css              estilos propios de cada pantalla
+│   └── checkout.css           checkout, fila virtual, avisos, liquidación, reporte y tráfico
+├── backend/                   API (app.js, routes/, controllers/, lib/ con el cálculo, config/business.js, db/*.sql)
+├── tests/                     pruebas (npm test)
 └── js/
-    ├── data.js                datos de ejemplo + etiquetas y colores    ← aquí editas eventos/asistentes/tareas
+    ├── config.js              API_URL, api.get/post…, avisos (Toast)  ← se carga primero
+    ├── data.js                etiquetas, colores y datos (los eventos reales llegan de la API)
     ├── utils.js               formato (COP, fechas), iconos SVG, helpers de formularios y eventos
-    ├── components/sidebars.js menús laterales de admin y usuario
+    ├── components/            sidebars, event-modal, checkout-modal, virtual-queue, auth/…
     ├── pages/
-    │   ├── landing.js
     │   ├── agent.js           chat del asistente (pestaña «Asistente» de Mi panel)
     │   ├── admin/             dashboard (finanzas), accounts (cuentas), profile
     │   ├── manager/           manager (estado, inicio, aforo, asistentes), events, calendar, tasks
     │   └── user/              user-app (estado e inscripciones), user-account (Mi panel)
     └── app.js                 estado global, navegación y dibujado (se carga al final)
 ```
-**El orden de los `<script>` en `index.html` importa:** `data` → `utils` → componentes → páginas → `app`.
+**El orden de los `<script>` en `index.html` importa:** `config` → `data` → `utils` → componentes → páginas → `app`.
 
 ## Roles y navegación (v6)
 | Rol | Qué ve | Archivos |
@@ -51,6 +57,17 @@ La caja de cupos usa la clase `.evm-info` (`css/panels.css`) con variables de te
 - `Data.accounts` (usuarios y agentes). Si el Admin **suspende o elimina** una cuenta demo (Carlos Mejía / Carmen López), el login la rechaza.
 - Imágenes de los eventos nuevos: URLs de Unsplash; si alguna no carga se ve el degradado del tipo. Cámbialas en el campo `image` de cada evento.
 
+## Autenticación (Login / Registro)
+`AuthModal` (diseño dividido, modo claro/oscuro) reemplaza los antiguos atajos por rol. Código en `js/components/auth/` (`LoginForm`, `RegisterForm`, `ForgotForm`, `AuthModal`), estado en `js/core/session.js` (`Session`, `AuthFlow`, `Guard`) y peticiones en `js/core/auth-service.js`.
+- **Probar ahora (modo mock):** `admin@eventpro.com`, `agente@eventpro.com`, `user@eventpro.com`, contraseña `123456`.
+- **Conectar tu backend:** `AuthConfig.USE_MOCK = false` y `API_BASE`. Contrato y ejemplo en [`docs/CONTRATO_API_AUTH.md`](docs/CONTRATO_API_AUTH.md).
+- El registro público solo crea cuentas **Usuario**; el Admin crea Agentes y cambia roles desde «Gestión de cuentas».
+
+## Base de datos (Neon / PostgreSQL)
+El plan completo para principiantes está en **[`docs/PLAN_BASE_DE_DATOS_NEON.md`](docs/PLAN_BASE_DE_DATOS_NEON.md)**.
+Scripts listos en `backend/db/` (se ejecutan en este orden en el *SQL Editor* de Neon): `001_schema.sql` (tablas, reglas y vistas) → `002_seed.sql` (datos de prueba equivalentes a `js/data.js`) → `003_checks.sql` (verificación). `000_reset.sql` borra todo para empezar de nuevo. `backend/legacy/` conserva la migración del modelo anterior solo como referencia.
+La app lee y escribe todo en la base a través de la API (`backend/`).
+
 ## Cómo funciona (para entender el código)
 - Cada pantalla es un objeto con un método `render()` que **devuelve HTML como texto** (template literals).
 - `App.render()` pone ese HTML dentro de `<div id="root">`. Conserva el scroll y el cursor del buscador.
@@ -67,15 +84,10 @@ registerClick({ "miPagina:saludar": () => alert("¡Hola!") });
 ```
 
 ## Limitaciones actuales
-- **No hay base de datos:** lo que creas o editas vive en memoria y se pierde al recargar la página.
+- **Seguridad (pendiente por decisión del equipo):** no hay login real ni permisos por rol en la API; el servidor confía en el `userId` del navegador. Cerrar esto es lo primero antes de publicar.
 - El asistente responde con textos predefinidos (no es IA real).
-- «Guardar cambios» funciona en el perfil del usuario (en memoria); el del Admin y el cambio de contraseña aún son maquetas.
-- El diseño está pensado para pantalla de computador (no es responsive para celular).
-
-## Siguientes pasos sugeridos
-1. Guardar los datos con `localStorage` para que no se pierdan al recargar.
-2. Hacer el diseño responsive con `@media` en `css/`.
-3. Conectar un backend o base de datos (Supabase, Firebase, etc.).
+- El estado de la fila virtual vive en la memoria del servidor (un solo proceso).
+- La pasarela de pago es **simulada**: no se cobra dinero real.
 
 ## Novedades: Home público y rol Agente
 - Modo **guest** (por defecto): `pages/public/guest-home.js`. "Inscribirse"/"Ver detalles" llevan `data-requires-auth`; el guard en `utils.js` abre el modal de login (`core/session.js`) y, al entrar, abre el modal del evento.

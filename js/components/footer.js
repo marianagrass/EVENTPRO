@@ -10,9 +10,8 @@
 const FOOTER_LINKS = {
   quick: [
     { label: "Explorar eventos", href: "#g-events", click: "footer:scroll", target: "g-events" },
-    { label: "Crear cuenta", href: "#", click: "auth:open", guestOnly: true },      // se oculta con sesión iniciada
-    { label: "Portal de organizadores (Agentes)", href: "#", click: "auth:open", suggest: "manager", guestOnly: true,
-      reason: "El portal de organizadores es para Agentes. Elige «Agente» para continuar." },
+    { label: "Crear cuenta", href: "#", click: "auth:open", view: "register", guestOnly: true },      // se oculta con sesión iniciada
+    { label: "Portal de organizadores (Agentes)", href: "#", click: "auth:open", view: "login", reason: "Acceso para Agentes y Administradores. Las cuentas las crea el administrador de la plataforma.", guestOnly: true },
   ],
   support: [
     { label: "Preguntas frecuentes (FAQ)", href: "#g-faq", click: "footer:scroll", target: "g-faq" },
@@ -67,7 +66,7 @@ const PublicFooter = {
       l.target ? `data-target="${l.target}"` : "",
       l.key ? `data-key="${l.key}"` : "",
       l.reason ? `data-reason="${esc(l.reason)}"` : "",
-      l.suggest ? `data-suggest="${l.suggest}"` : "",
+      l.view ? `data-view="${l.view}"` : "",
       l.requiresAuth ? "data-requires-auth" : "",
     ].filter(Boolean).join(" ");
     return `<li><a ${attrs}>${esc(l.label)}</a></li>`;

@@ -32,6 +32,8 @@
   <link rel="stylesheet" href="css/footer.css">
   <link rel="stylesheet" href="css/search.css">
   <link rel="stylesheet" href="css/panels.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/checkout.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/theme.css">
 </head>
@@ -39,9 +41,11 @@
   <div id="root"></div>
 
   <!-- Scripts: el orden importa (datos → utilidades → componentes → páginas → app) -->
+  <script src="js/config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/core/theme.js"></script>
+  <script src="js/core/auth-service.js"></script>
   <script src="js/core/session.js"></script>
 
   <script src="js/components/theme-toggle.js"></script>
@@ -50,13 +54,17 @@
   <script src="js/components/app-shell.js"></script>
   <script src="js/components/sidebars.js"></script>
   <script src="js/components/footer.js"></script>
+  <script src="js/components/virtual-queue.js"></script>
+  <script src="js/components/checkout-modal.js"></script>
   <script src="js/components/event-modal.js"></script>
+  <script src="js/components/auth/auth-forms.js"></script>
+  <script src="js/components/auth/auth-modal.js"></script>
   <script src="js/components/public-layout.js"></script>
 
-  <script src="js/pages/landing.js"></script>
   <script src="js/pages/agent.js"></script>
 
   <!-- Admin: finanzas y cuentas -->
+  <script src="js/pages/admin/reports.js"></script>
   <script src="js/pages/admin/dashboard.js"></script>
   <script src="js/pages/admin/accounts.js"></script>
   <script src="js/pages/admin/profile.js"></script>

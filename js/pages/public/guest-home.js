@@ -16,6 +16,17 @@ const GUEST_STEPS = [
   ["shield",   "Vive sin complicaciones", "Equipos de gestión dedicados cuidan aforo, acceso y asistencia de cada evento.", "#f0287f", "#ff5fa8"],
 ];
 
+/** Cifras de la franja del Home: se calculan al dibujar (Data.events se llena después de pedir la API). */
+function guestStats() {
+  const live = Data.events.filter((e) => !["completado", "cancelado"].includes(e.status));
+  const people = Data.events.reduce((s, e) => s + e.registered, 0);
+  return [
+    { value: String(live.length), label: "Eventos activos" },
+    { value: people >= 1000 ? `${(people / 1000).toFixed(1).replace(".", ",")}K+` : String(people), label: "Asistentes" },
+    { value: String(new Set(Data.events.map((e) => e.type)).size), label: "Tipos de evento" },
+  ];
+}
+
 const GUEST_FAQ = [
   ["¿Necesito una cuenta para ver los eventos?", "No. Puedes explorar libremente todos los eventos públicos. Para inscribirte o ver el detalle de un evento sí necesitas iniciar sesión."],
   ["¿Cómo me inscribo a un evento?", "Inicia sesión, elige el evento y pulsa «Inscribirse». Confirma tu cupo y lo verás en la sección «Mis inscripciones»."],
@@ -62,7 +73,11 @@ const GuestHome = {
   /* ----- piezas ----- */
   card(ev) {
     const tc = TYPE_STYLE[ev.type], d = parseDate(ev.date);
-    const spots = UserApp.getSpots(ev.id), full = spots <= 0;
+    const spots = UserApp.getSpots(ev.id);
+    const closed = ev.availability && ev.availability !== "open";          // el Agente pausó o cerró las inscripciones
+    const full = !closed && spots <= 0;                                    // aforo completo
+    const blocked = closed || full;
+    const blockLabel = closed ? (ev.availability === "paused" ? "Inscripciones pausadas" : "Inscripciones cerradas") : "Agotado";
     const mine = Session.isUser && UserApp.isRegistered(ev.id);
     // Visitante: el guard pide login. Usuario con sesión: abre el modal directamente.
     const auth = Session.isAuthenticated ? "" : "data-requires-auth";
@@ -71,12 +86,13 @@ const GuestHome = {
       ? `<button class="btn btn-outline" style="flex:1" data-click="event:details" data-id="${ev.id}">Ver detalles</button>
          <div class="registered-tag" style="flex:1;justify-content:center">${icon("check", 14, { width: 3 })}<span>Inscrito</span></div>`
       : `<button class="btn btn-outline" style="flex:1" ${auth} data-click="event:details" data-id="${ev.id}">Ver detalles</button>
-         <button class="cta-btn" style="flex:1;background:${tc.gradient}" ${auth} data-click="event:register" data-id="${ev.id}" ${full ? "disabled" : ""}>${full ? "Agotado" : "Inscribirse"}</button>`;
+         <button class="cta-btn" style="flex:1;background:${tc.gradient}" ${auth} data-click="event:register" data-id="${ev.id}" ${blocked ? "disabled" : ""}>${blocked ? (closed ? "No disponible" : "Agotado") : "Inscribirse"}</button>`;
     return `
       <article class="card card-hover g-card">
         <div class="g-img" style="${imgBg}">
           <span class="img-badge img-badge-lg" style="background:${tc.gradient}">${TYPE_LABEL[ev.type]}</span>
           ${ev.featured ? `<span class="g-star">★ Destacado</span>` : ""}
+          ${!blocked && ev.salesState === "ultimos_cupos" ? `<span class="g-lastspots">${icon("zap", 12, { color: "#fff", width: 2.6 })} ¡Últimos cupos!</span>` : ""}
           <span class="g-price ${ev.price > 0 ? "" : "is-free"}">${esc(priceLabel(ev))}</span>
           <div class="g-date"><b>${String(d.getDate()).padStart(2, "0")}</b><small>${d.toLocaleString("es-CO", { month: "short" })}</small></div>
         </div>
@@ -85,7 +101,7 @@ const GuestHome = {
           <div class="g-meta">${esc(ev.time)} · ${esc(ev.location)}</div>
           <div class="row" style="gap:8px;margin:14px 0 16px">
             <div class="bar bar-thin" style="flex:1"><div class="bar-fill" style="width:${percent(ev.registered, ev.capacity)}%;background:${tc.gradient}"></div></div>
-            <span class="dash-count">${full ? "Agotado" : spots + " cupos"}</span>
+            <span class="dash-count">${blocked ? blockLabel : spots + (spots === 1 ? " cupo" : " cupos")}</span>
           </div>
           <div class="g-buttons">${cta}</div>
         </div>
@@ -179,7 +195,7 @@ const GuestHome = {
 
   /* ----- vista ----- */
   render() {
-    const stats = LANDING_STATS.map((s) => `<div><div class="g-stat-v">${s.value}</div><div class="g-stat-l">${s.label}</div></div>`).join("");
+    const stats = guestStats().map((s) => `<div><div class="g-stat-v">${s.value}</div><div class="g-stat-l">${s.label}</div></div>`).join("");
 
     const content = `
       ${HeroCarousel.render()}
@@ -221,7 +237,7 @@ const GuestHome = {
               ${Session.isUser
                 ? `<button class="btn btn-primary btn-xl" data-click="footer:scroll" data-target="g-events">Explorar eventos</button>
                    <button class="btn btn-outline btn-xl" data-click="nav:user" data-view="inscripciones">Mis inscripciones</button>`
-                : `<button class="btn btn-primary btn-xl" data-click="auth:open">Crear cuenta</button>
+                : `<button class="btn btn-primary btn-xl" data-click="auth:open" data-view="register">Crear cuenta</button>
                    <button class="btn btn-outline btn-xl" data-click="footer:scroll" data-target="g-events">Explorar eventos</button>`}
             </div>
           </div>
@@ -264,7 +280,7 @@ const GuestHome = {
             <h2>¿Listo para vivir tu próximo evento?</h2>
             <p>Crea tu cuenta gratis, inscríbete en segundos y lleva tu agenda siempre contigo.</p>
           </div>
-          <button class="btn btn-accent btn-xl" data-click="auth:open">Crear cuenta ${icon("right", 16, { width: 2.8 })}</button>`}
+          <button class="btn btn-accent btn-xl" data-click="auth:open" data-view="register">Crear cuenta ${icon("right", 16, { width: 2.8 })}</button>`}
         </div>
       </section>`;
 
@@ -276,6 +292,8 @@ const GuestHome = {
     PublicLayout.afterRender({ overHero: true });
     HeroCarousel.mount();
     EventModal.afterRender();
+    CheckoutModal.afterRender();
+    AuthModal.afterRender();
   },
 };
 

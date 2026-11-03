@@ -86,8 +86,8 @@ const PublicLayout = {
         <div class="g-actions">
           ${ThemeToggle.render()}
           ${Session.isUser ? this.userMenu() : `
-          <button class="btn g-btn-ghost" data-click="auth:open">Iniciar sesión</button>
-          <button class="btn btn-accent" data-click="auth:open">Crear cuenta</button>`}
+          <button class="btn g-btn-ghost" data-click="auth:open" data-view="login">Iniciar sesión</button>
+          <button class="btn btn-accent" data-click="auth:open" data-view="register">Crear cuenta</button>`}
         </div>
         <button type="button" class="g-burger" data-click="menu:toggle" aria-controls="g-drawer" aria-expanded="false" aria-label="Abrir menú">
           ${icon("menu", 26, { width: 2.2 })}
@@ -114,8 +114,8 @@ const PublicLayout = {
           <button class="btn btn-accent" data-click="app:logout">Cerrar sesión</button>
         </div>` : `
         <div class="g-drawer-cta">
-          <button class="btn btn-outline" data-click="auth:open">Iniciar sesión</button>
-          <button class="btn btn-accent" data-click="auth:open">Crear cuenta</button>
+          <button class="btn btn-outline" data-click="auth:open" data-view="login">Iniciar sesión</button>
+          <button class="btn btn-accent" data-click="auth:open" data-view="register">Crear cuenta</button>
         </div>`}
       </aside>`;
   },
@@ -133,7 +133,8 @@ const PublicLayout = {
         ${content}
         ${PublicFooter.render()}
         ${EventModal.render()}
-        ${Guard.modal()}
+        ${CheckoutModal.render()}
+        ${AuthModal.render()}
         ${Notice.modal()}
       </div>`;
   },
