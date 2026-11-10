@@ -3,7 +3,9 @@
    La cadena de conexión viene de .env (DATABASE_URL). NUNCA se escribe aquí ni se sube a Git.
    ========================================================== */
 require("dotenv").config();                     // idempotente: también funciona si alguien importa db.js solo
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
+// NUMERIC (oid 1700) llega como texto por defecto; precios y totales son DECIMAL en el ER → se leen como número
+types.setTypeParser(1700, (v) => parseFloat(v));
 
 const url = process.env.DATABASE_URL;
 if (!url) {

@@ -71,7 +71,7 @@ const AccountPage = {
     const nextDays = next ? Math.max(0, Math.ceil((parseDate(next.date).getTime() - Date.now()) / 86400000)) : null;
     const stats = [
       { label: "Inscripciones activas", value: up.length,   icon: "ticket",        color: "var(--primary-fg)" },
-      { label: "Eventos a los que fuiste", value: past.length, icon: "history",    color: "var(--text)" },
+      { label: "Eventos realizados", value: past.length, icon: "history",    color: "var(--text)" },
       { label: next ? "Días para tu próximo evento" : "Próximo evento", value: next ? nextDays : "—", icon: "calendar-days", color: "var(--muted)" },
     ].map(StatCard).join("");
 
@@ -114,8 +114,6 @@ const AccountPage = {
     const past = UserApp.past();
     if (!past.length) return this.emptyState("Todavía no tienes historial", "Cuando termine un evento en el que estés inscrito, aparecerá aquí.");
     const rows = past.map((ev) => {
-      const att = Data.attendees.find((a) => a.userId === Session.user.id && a.eventId === ev.id);
-      const went = !!(att && att.checkedInAt);
       return `
         <div class="card acct-row is-past">
           ${this.dateBadge(ev, 52)}
@@ -123,7 +121,7 @@ const AccountPage = {
             <div class="acct-row-title">${esc(ev.name)}</div>
             <div class="acct-row-meta"><span>${icon("pin", 14)} ${esc(ev.location)}</span><span>${icon("calendar", 14)} ${parseDate(ev.date).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })}</span></div>
           </div>
-          <span class="badge ${went ? "st-confirmado" : "st-completado"}">${went ? "Asististe" : "Completado"}</span>
+          <span class="badge st-completado">Completado</span>
         </div>`;
     }).join("");
     return `<div class="col-stack" style="gap:10px">${rows}</div>`;
@@ -143,12 +141,15 @@ const AccountPage = {
             <div>
               <div style="font-family:var(--font-title);font-size:22px;font-weight:700">${esc(fullName)}</div>
               <div style="font-size:14px;color:var(--muted);margin-top:4px">${esc(p.correo)}</div>
-              <span class="badge acct-role">Usuario</span>
+              <span class="badge acct-role">Cliente</span>
             </div>
           </div>
           <div class="form-grid-2" style="gap:16px;margin-bottom:20px">
             ${f("Nombre", "nombre")}${f("Apellido", "apellido")}${f("Correo", "correo", "email")}
-            ${f("Teléfono", "telefono", "tel")}${f("Ciudad", "ciudad")}${f("Institución", "institucion")}
+            ${f("Teléfono", "telefono", "tel")}
+            <div><label class="field-label field-label-sm">Ciudad</label>
+              <select class="input" data-input="account:field" data-key="cityId" aria-label="Ciudad">${cityOptionsHtml(p.cityId)}</select></div>
+            <div style="grid-column:1/-1">${f("Dirección", "direccion")}</div>
           </div>
           ${this.formError ? `<div class="auth-error" role="alert" style="text-align:left">${esc(this.formError)}</div>` : ""}
           ${this.saved ? `<div class="acct-saved" role="status">${icon("check", 16, { width: 3 })} Cambios guardados</div>` : ""}
@@ -225,21 +226,25 @@ registerClick({
     if (!/^\S+@\S+\.\S+$/.test(p.correo.trim())) { AccountPage.formError = "Escribe un correo válido."; AccountPage.saved = false; rerender(); return; }
     const taken = Data.accounts.some((a) => a.id !== Session.user.id && a.email.toLowerCase() === p.correo.trim().toLowerCase());
     if (taken) { AccountPage.formError = "Ese correo ya está en uso por otra cuenta."; AccountPage.saved = false; rerender(); return; }
+    if (!(Number(p.cityId) >= 1)) { AccountPage.formError = "Selecciona tu ciudad."; AccountPage.saved = false; rerender(); return; }
     AccountPage.formError = "";
-    
+
     const newName = `${p.nombre.trim()} ${p.apellido.trim()}`.trim();
     const newEmail = p.correo.trim().toLowerCase();
 
     try {
       // --- NUEVO: Guardar perfil en la base de datos ---
-      const saved = await apiSend('PUT', `/accounts/${Session.user.id}/profile`, { name: newName, email: newEmail, phone: p.telefono, city: p.ciudad, institution: p.institucion });
-      if (!saved) { AccountPage.formError = "No se pudo guardar tu perfil. Inténtalo de nuevo."; AccountPage.saved = false; rerender(); return; }
+      try {
+        await api.put(`/accounts/${Session.user.id}/profile`, { name: newName, email: newEmail, phone: p.telefono, cityId: Number(p.cityId), address: p.direccion });
+      } catch (err) {
+        const first = err.fields ? Object.values(err.fields)[0] : "";
+        AccountPage.formError = first ? `${err.message} ${first}` : err.message; AccountPage.saved = false; rerender(); return;
+      }
 
       // Actualizar sesión y estado local
       Session.user.name = newName;
       Session.user.email = newEmail;
-      const acc = Data.accounts.find((a) => a.id === Session.user.id);
-      if (acc) Object.assign(acc, { name: newName, email: newEmail, phone: p.telefono, city: p.ciudad, institution: p.institucion });
+      await refreshData();                                  // trae la ciudad/departamento ya guardados
       
       AccountPage.saved = true;
       rerender();

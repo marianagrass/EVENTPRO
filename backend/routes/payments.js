@@ -5,19 +5,22 @@ const express = require("express");
 const checkoutController = require("../controllers/checkoutController");
 const reportController = require("../controllers/reportController");
 const pricingController = require("../controllers/pricingController");
+const priceSuggestionController = require("../controllers/priceSuggestionController");
 const { handleError } = require("../lib/http-errors");
 
-module.exports = function paymentRoutes({ pool, traffic }) {
+module.exports = function paymentRoutes({ models, traffic }) {
   const r = express.Router();
-  const pricing = pricingController({ pool });
-  const checkout = checkoutController({ pool, traffic, onSale: (eventId) => pricing.evaluateEvent(eventId, { apply: true }) });
-  const reports = reportController({ pool });
+  const pricing = pricingController({ models });
+  const checkout = checkoutController({ models, traffic, onSale: (eventId) => pricing.evaluateEvent(eventId, { apply: true }) });
+  const reports = reportController({ models });
+  const priceSuggestion = priceSuggestionController({ models });
 
   /* ----- Checkout: pasa primero por el middleware de fila virtual (T'(x) > umbral → 429 + fila) ----- */
   r.get("/zones", checkout.zones);
   r.post("/checkout/quote", traffic.virtualQueueGate, checkout.quote);
   r.post("/checkout", traffic.virtualQueueGate, checkout.pay);
-  r.post("/unregister", checkout.cancel);                       // cancelar inscripción (con reembolso simulado)
+  r.post("/unregister", checkout.cancel);                       // cancelar la inscripción de un cliente en un evento (pide la causa)
+  r.post("/reservas/:id/cancel", checkout.cancelById);          // cancelar una reserva por su id (pide la causa)
 
   /* ----- Fila virtual ----- */
   r.post("/queue/enter", (req, res) => {
@@ -40,9 +43,10 @@ module.exports = function paymentRoutes({ pool, traffic }) {
   r.get("/agents/:id/commission", reports.agentCommission);         // Agente: L(E,T) = b·E + m·T
 
   /* ----- Precios dinámicos ----- */
+  r.post("/events/price-suggestion", priceSuggestion.suggest);      // Agente: precio ideal x* = M/2k (no cambia nada)
   r.get("/events/:id/pricing", pricing.show);                       // análisis (no cambia nada)
   r.post("/events/:id/pricing/evaluate", pricing.evaluate);         // evalúa y aplica si hay pico
 
   r.use((err, _req, res, _next) => handleError(res, err, "payments"));
-  return { router: r, pricing, checkout, reports };
+  return { router: r, pricing, checkout, reports, priceSuggestion };
 };

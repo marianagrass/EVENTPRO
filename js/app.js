@@ -54,18 +54,22 @@ const OfflineBanner = {
 /** Descarga eventos, cuentas, asistentes y tareas y las deja en Data. Devuelve true si salió bien. */
 async function refreshData() {
   try {
-    const [events, accounts, attendees, tasks] = await Promise.all([api.get("/events"), api.get("/accounts"), api.get("/attendees"), api.get("/tasks")]);
+    const [events, accounts, attendees, ciudades] = await Promise.all([api.get("/events"), api.get("/accounts"), api.get("/attendees"), api.get("/ciudades")]);
     Data.events = events.map((ev) => ({
       ...ev,
-      date: String(ev.event_date).split("T")[0], time: ev.start_time, type: ev.type_code, price: ev.price_cop, image: ev.image_url,
+      date: String(ev.event_date).split("T")[0], time: ev.start_time, type: ev.type_code, price: ev.price_cop, image: ev.image_url || TYPE_IMAGES[ev.type_code],
       basePrice: ev.base_price_cop, salesState: ev.sales_state,
     }));
-    Data.accounts = accounts.map((acc) => ({
-      ...acc, role: acc.role === "agent" ? "manager" : acc.role,
-      createdAt: String(acc.created_at).split("T")[0], lastLogin: acc.last_login_at ? String(acc.last_login_at).split("T")[0] : null,
+    // PERSONA + subclase: el rol viene deducido de la herencia (cliente → user, agente → manager, administrador → admin)
+    Data.accounts = accounts.map((acc) => ({ ...acc, role: acc.role === "agent" ? "manager" : acc.role, cityId: acc.city_id, loyaltyPoints: acc.loyalty_points }));
+    Data.cities = ciudades.map((c) => ({ id: c.id_ciudad ?? c.id, name: c.nombre_ciudad ?? c.name, department: c.nombre_departamento ?? c.department }));
+    // RESERVA (antes INSCRIBE_RESERVA): una fila por reserva, con número de entradas, valor total y causa de cancelación
+    Data.attendees = attendees.map((a) => ({
+      id: a.id, userId: a.user_id, name: a.name, email: a.email, phone: a.phone, eventId: a.event_id, eventName: a.event_name,
+      status: a.status, zone: a.zone_code, tickets: a.tickets || 1, total: a.total_paid ?? 0, paymentCode: a.payment_code || "",
+      registeredAt: a.registered_at, cancelReason: a.cancel_reason || "",
     }));
-    Data.attendees = attendees.map((a) => ({ id: a.id, userId: a.user_id, name: a.name, email: a.email, phone: a.phone, eventId: a.event_id, eventName: a.event_name, status: a.status, zone: a.zone_code, registeredAt: a.registered_at, checkedInAt: a.checked_in_at }));
-    Data.tasks = tasks.map((t) => ({ id: t.id, title: t.title, eventId: t.event_id, eventName: t.event_name || "", assigneeId: t.assignee_id, assignee: t.assignee || "", category: t.category || "", dueDate: t.due_date ? String(t.due_date).split("T")[0] : "", priority: t.priority, status: t.status }));
+    Data.tasks = [];                                       // el módulo de tareas ya no existe en el modelo ER
     App.offline = false;
     if (typeof MgrCommission !== "undefined") MgrCommission.invalidate();
     if (typeof RevenueReport !== "undefined") RevenueReport.invalidate();

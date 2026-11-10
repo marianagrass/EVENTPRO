@@ -10,6 +10,7 @@ Todo el cálculo vive en el **backend** (el navegador solo muestra lo que el ser
 | Ingresos por mes 2026 | área bajo la curva ∫ f(t) dt | `lib/calculus.js` → `integrate` · `reportController.monthlyRevenue` |
 | Aforo | límite por la izquierda s = inscritos/aforo → 1⁻ | `lib/capacity.js` + función SQL `sales_state_for` |
 | Precios dinámicos | r = dI/dt y máximos locales | `lib/pricing.js` → `evaluateDynamicPrice` · `controllers/pricingController.js` |
+| Precio ideal | D(x)=M−kx · I(x)=Mx−kx² · I′=0 ⇒ x\*=M/2k · I″=−2k<0 | `lib/optimization.js` · `controllers/priceSuggestionController.js` |
 | Fila virtual | T(x) = k/(C−x)+Tb · T′(x) = k/(C−x)² | `lib/traffic.js` → `virtualQueueGate` (middleware) |
 
 ## 1. Costo total P(x) = (B·x·C) − D(p)
@@ -50,7 +51,7 @@ El número completo y el CVV **nunca se guardan**: la base solo conserva marca y
 ## 2. Comisión del Agente (función lineal)
 
 `L(E, T) = b·E + m·T` con **b = $40.000 por evento** y **m = $1.200 por entrada** (tabla `commission_rules`, editable).
-E = eventos que creó o a los que hizo check-in · T = check-ins que hizo. Se ve en **Dashboard del Agente → Mi liquidación**, con el desglose por evento.
+E = eventos no cancelados de los que es Agente (EVENTO.id_agente) · T = entradas con reserva «Confirmada» en esos eventos (en V10 ya no hay check-in). Se guarda en `AGENTE.comision`. Se ve en **Dashboard del Agente → Mi liquidación**, con el desglose por evento.
 
 ## 3. Reporte de ingresos 2026 (integral)
 
@@ -79,9 +80,38 @@ El middleware `virtualQueueGate` va delante de `/checkout` y `/checkout/quote`:
 **Cómo verlo funcionando:** entra como Admin → *Tráfico del servidor* → mueve el control a 95 usuarios → **Simular**. Luego, en otra ventana, entra como usuario e intenta pagar: verás la fila. Pulsa **Detener** y el usuario pasa al pago.
 > El estado de la fila vive en la memoria del proceso (sirve para un solo servidor). Para varios servidores habría que moverlo a Redis.
 
+## 6. Precio ideal del boleto (cálculo diferencial)
+
+Herramienta del Agente: en **Gestión de eventos → Crear/Editar evento** aparece el panel **«Precio ideal sugerido»**. Calcula solo el precio que maximiza los ingresos y tiene el botón **Usar este precio**. En «Ver el cálculo y ajustar M y k» se ven (y se pueden cambiar) los dos parámetros del modelo.
+
+| Paso | Fórmula | Código |
+|---|---|---|
+| Demanda (boletos vendidos al precio x) | D(x) = M − k·x | `demand` |
+| Ingresos | I(x) = x·D(x) = M·x − k·x² | `revenue` |
+| 1.ª derivada (tasa de cambio) | I′(x) = M − 2k·x | `revenueFirstDerivative` |
+| Punto crítico: I′(x) = 0 | M − 2k·x = 0 ⇒ **x\* = M / 2k** | `optimizeRevenue` |
+| 2.ª derivada (garantía) | I″(x) = −2k **< 0** | `revenueSecondDerivative` |
+
+M = mercado máximo (personas que irían si fuera gratis). k = sensibilidad (boletos que se pierden por cada $1 de aumento).
+
+**Garantía del sistema (criterio de la 2.ª derivada).** Antes de sugerir nada, `optimizeRevenue` calcula I″ = −2k y **exige que sea negativa**: si M ≤ 0 o k ≤ 0 lanza un error y no devuelve precio (con k ≤ 0 la parábola no abriría hacia abajo y no habría máximo). Como I″ es constante y negativa en todo x, la parábola es cóncava hacia abajo y **x\* es un máximo global**, no solo local. Además se hace una comprobación numérica independiente: I(x\*−h) < I(x\*) y I(x\*+h) < I(x\*). Resultado: ingreso máximo I(x\*) = M²/4k con demanda D(x\*) = M/2. Dato útil: x\* = M/2k es **la mitad del precio al que nadie compraría** (M/k).
+
+**Ejemplo:** M = 1.500 y k = 0,015 → D(x) = 1500 − 0,015x · I′(x) = 1500 − 0,03x · x\* = 1500/0,03 = **$50.000** · I″ = −0,03 < 0 ✓ · se venderían 750 boletos e ingresarían $37,5 M.
+
+**De dónde salen M y k** (`estimateDemandModel`):
+1. **Historial:** regresión por mínimos cuadrados con eventos *pagos del mismo tipo* que ya tienen ventas (llenado = inscritos/aforo contra precio; M = intercepto × aforo, k = pendiente × aforo). Se usa solo con ≥ 4 eventos, ≥ 3 precios distintos, pendiente negativa y R² ≥ 0,3.
+2. **Estimación inicial** si no hay curva confiable: M = 1,5 × aforo y a $100.000 nadie compra (k = M/100.000). Es un punto de partida: ajústalo con lo que sepas de tu público.
+3. **Manual:** lo que escribas en M y/o k manda; el campo vacío es automático.
+
+**Dos ajustes honestos al óptimo teórico** (`recommendPrice`): (a) *aforo* — no se pueden vender más boletos que cupos; si D(x\*) > aforo, el precio recomendado sube hasta (M − aforo)/k, el mínimo que no sobrepasa los cupos; (b) el precio se redondea a $500 eligiendo el vecino que más ingresa. La API devuelve tanto el óptimo exacto (`optimum.price`) como el recomendado (`recommended.price`).
+
+**Cautelas que muestra la pantalla:** si el precio sugerido queda muy lejos de lo que ya cobraste, avisa que el modelo *extrapola*; con pocos datos la confianza es «baja». El modelo es lineal y solo describe el precio base (zona general): las zonas preferencial y VIP lo multiplican por C. No cambia nada por sí solo: el Agente decide si lo usa.
+
+API: `POST /api/events/price-suggestion` con `{ typeCode, capacity, eventId?, currentPrice?, M?, k? }`. Código: `backend/lib/optimization.js` (matemática pura), `backend/controllers/priceSuggestionController.js` (historial + respuesta), `js/pages/manager/price-ideal.js` (panel).
+
 ## Base de datos
 
-Ejecuta en el *SQL Editor* de Neon, en este orden: `001_schema.sql` → `002_seed.sql` → **`004_payments.sql`** → `005_payments_checks.sql` (verificación).
+**(V10)** Ejecuta en el *SQL Editor* de Neon, en este orden: `010_modelo_er.sql` → `011_soporte_negocio.sql` → `012_catalogos.sql` → `013_datos_demo.sql` → `014_verificaciones.sql` (ver `docs/MODELO_ER.md`). Texto de la V9: `001_schema.sql` → `002_seed.sql` → `004_payments.sql` → `005_payments_checks.sql` (verificación).
 `004_payments.sql` se puede ejecutar varias veces sin romper nada. Agrega: `zones`, `payments`, `loyalty_ledger`, `commission_rules`, `price_adjustments`, la vista `v_agent_activity`, columnas `users.loyalty_points`, `events.base_price_cop`, `events.sales_state`, `attendees.payment_id/zone_code`, y las funciones `confirm_checkout` / `cancel_registration`. `000_reset.sql` borra todo (incluido lo nuevo).
 
 ## Pruebas

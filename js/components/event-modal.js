@@ -49,10 +49,7 @@ const EventModal = {
     const ev = this.event;
     if (!ev) return;
     this.error = "";
-    const ok = await UserApp.unregister(ev.id);
-    if (ok === false) { this.error = "No se pudo cancelar la inscripción. Inténtalo de nuevo."; rerender(); return; }
-    this.done = false;
-    rerender();
+    CancelReserva.open(ev.id);               // pide la causa antes de cancelar la reserva
   },
 
   /* ----- vista ----- */

@@ -16,8 +16,7 @@ const MANAGER_NAV = [
   { id: "eventos",    label: "Gestión de eventos",  icon: "ticket" },
   { id: "calendario", label: "Calendario",          icon: "calendar" },
   { id: "aforo",      label: "Cupos y aforo",       icon: "gauge" },
-  { id: "asistentes", label: "Asistentes",          icon: "check" },
-  { id: "tareas",     label: "Tareas",              icon: "tasks" },
+  { id: "asistentes", label: "Reservas",            icon: "ticket" },
 ];
 
 /** Estructura común del menú lateral. cfg: { sub, roleLabel, items, active, click, meName, meRole, meBg } */

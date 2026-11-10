@@ -1,0 +1,3 @@
+Estos archivos son el esquema ANTERIOR (V1–V9, tablas en inglés: users, events, attendees…).
+Ya NO se ejecutan: el modelo vigente es el ER del tutor (010 → 013 en la carpeta superior).
+Se conservan solo como referencia histórica; 010_modelo_er.sql ya contiene los DROP necesarios para migrar.

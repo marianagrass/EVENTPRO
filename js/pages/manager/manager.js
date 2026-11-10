@@ -2,9 +2,9 @@ const AVAIL = { open: "Abierto", paused: "Pausado", closed: "Cerrado" };
 const ACTIVE_STATUS = (e) => !["completado", "cancelado"].includes(e.status);
 const ManagerApp = {
   view: "inicio", capModal: null, capValue: 0, capError: "", closeId: null,
-  eventId: "todos", search: "", filter: "todos", attModal: false, attForm: null, attError: "", attDeleteId: null,
+  eventId: "todos", search: "", filter: "todos", attFilter: "todos", cancelRes: null, cancelCausa: "", cancelError: "", cancelBusy: false,
   events() { return Data.events; }, active() { return Data.events.filter(ACTIVE_STATUS); }, find(id) { return Data.events.find((e) => e.id === id); },
-  pages() { return { inicio: MgrHomePage, eventos: MgrEventsPage, calendario: MgrCalendarPage, aforo: MgrCapacityPage, asistentes: MgrAttendeesPage, tareas: MgrTasksPage }; },
+  pages() { return { inicio: MgrHomePage, eventos: MgrEventsPage, calendario: MgrCalendarPage, aforo: MgrCapacityPage, asistentes: MgrAttendeesPage }; },
   currentPage() { return this.pages()[this.view]; },
   render() { return AppShell.render({ sidebar: ManagerSidebar.render(), page: this.currentPage().render(), title: navTitle(MANAGER_NAV, this.view) }); },
 };
@@ -47,7 +47,7 @@ const MgrCommission = {
             <div><span>Eventos gestionados (E)</span><strong>${d.eventsManaged}</strong><small>${cop(r.perEventCop)} c/u</small></div>
             <div><span>Entradas gestionadas (T)</span><strong>${d.ticketsManaged}</strong><small>${cop(r.perTicketCop)} c/u</small></div>
           </div>
-          <div class="cm-break"><span class="cm-label">Por evento</span>${rows || `<p class="cm-muted">Aún no gestionas eventos: crea uno o registra check-ins para sumar.</p>`}</div>
+          <div class="cm-break"><span class="cm-label">Por evento</span>${rows || `<p class="cm-muted">Aún no gestionas eventos: crea uno para empezar a sumar.</p>`}</div>
         </div>
       </section>`;
   },
@@ -63,9 +63,9 @@ const MgrHomePage = {
     const evs = ManagerApp.active();
     const att = Data.attendees.filter((a) => a.status === "confirmado" && evs.some((e) => e.id === a.eventId));
     const reg = evs.reduce((s, e) => s + e.registered, 0), cap = evs.reduce((s, e) => s + e.capacity, 0);
-    const done = att.filter((a) => a.checkedInAt).length;
+    const sold = att.reduce((s, a) => s + (a.tickets || 1), 0);
     const restricted = evs.filter((e) => e.availability !== "open").length;
-    const kpis = [["Eventos activos", evs.length, `de ${Data.events.length} en total`], ["Aforo ocupado", `${percent(reg, cap)}%`, `${reg} de ${cap} cupos`], ["Check-in realizado", `${done}/${att.length}`, "asistentes confirmados"], ["Inscripción restringida", restricted, "pausados o cerrados"]]
+    const kpis = [["Eventos activos", evs.length, `de ${Data.events.length} en total`], ["Aforo ocupado", `${percent(reg, cap)}%`, `${reg} de ${cap} cupos`], ["Entradas vendidas", sold, `en ${att.length} reservas confirmadas`], ["Inscripción restringida", restricted, "pausados o cerrados"]]
       .map(([l, v, s]) => `<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join("");
     const rows = [...evs].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6).map((ev) => {
       const d = parseDate(ev.date);
@@ -74,16 +74,16 @@ const MgrHomePage = {
             <div class="row" style="gap:8px"><div class="bar bar-thin" style="flex:1"><div class="bar-fill" style="width:${percent(ev.registered, ev.capacity)}%;background:${TYPE_COLOR[ev.type]}"></div></div><span class="dash-count">${ev.registered}/${ev.capacity}</span></div></div>
           <span class="badge avail-${ev.availability}">${AVAIL[ev.availability]}</span></div>`;
     }).join("");
-    const urgent = [...Data.tasks].filter((t) => t.status !== "completado").sort((a, b) => (a.priority === "alta" ? -1 : b.priority === "alta" ? 1 : 0)).slice(0, 5)
-      .map((t) => `<div class="dash-row dash-row-top"><div class="prio-dot" style="background:${PRIORITY[t.priority].dot}"></div>
-          <div class="dash-info"><div class="task-title">${esc(t.title)}</div><div class="dash-meta" style="margin:0">${esc(t.eventName)} · ${esc(t.assignee)}</div></div>
-          <span class="chip st-${t.status}">${t.status === "en_progreso" ? "En progreso" : "Pendiente"}</span></div>`).join("");
+    const recent = [...Data.attendees].sort((x, y) => String(y.registeredAt).localeCompare(String(x.registeredAt))).slice(0, 5)
+      .map((r) => `<div class="dash-row dash-row-top"><div class="avatar" style="width:34px;height:34px;font-size:12px;background:${avatarColor(r.name)}">${esc(initials(r.name))}</div>
+          <div class="dash-info"><div class="task-title">${esc(r.name)}</div><div class="dash-meta" style="margin:0">${esc(r.eventName)} · ${r.tickets} ${r.tickets === 1 ? "entrada" : "entradas"} · ${cop(r.total)}</div></div>
+          ${statusBadge(r.status)}</div>`).join("");
     const today = capFirst(new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
     return `<div class="page" style="--w:1680px">
         ${pageHeader({ eyebrow: today, title: `Hola, ${esc(Session.firstName)}`, subtitle: "Resumen operativo de todos los eventos de la plataforma.", action: `<button class="btn btn-primary" data-click="manager:newEvent">${icon("plus", 16, { width: 2.5 })} Crear evento</button>` })}
         <div class="grid-kpi">${kpis}</div>${MgrCommission.render()}<div class="grid-dash">
           <div class="card"><div class="card-head"><h2>Próximos eventos</h2><button class="btn btn-light" data-click="nav:manager" data-view="eventos">Gestionar</button></div>${rows || `<p class="card-pad">No hay eventos activos.</p>`}</div>
-          <div class="card"><div class="card-head"><h2>Tareas urgentes</h2><button class="btn btn-light" data-click="nav:manager" data-view="tareas">Ver todas</button></div>${urgent || `<p class="card-pad">Sin tareas pendientes.</p>`}</div></div></div>`;
+          <div class="card"><div class="card-head"><h2>Reservas recientes</h2><button class="btn btn-light" data-click="nav:manager" data-view="asistentes">Ver todas</button></div>${recent || `<p class="card-pad">Aún no hay reservas.</p>`}</div></div></div>`;
   },
 };
 /* ----- Demanda y precio dinámico: r(t) = dI/dt y sus máximos locales (el análisis lo hace el servidor) ----- */
@@ -168,56 +168,55 @@ const MgrCapacityPage = {
         <div class="grid-cards" style="--min:320px">${cards}</div>${modal}${MgrPricing.render()}</div>`;
   },
 };
-const attBlank = () => ({ name: "", email: "", phone: "", eventId: (ManagerApp.active()[0] || {}).id || "" });
 const MgrAttendeesPage = {
   inScope() { return Data.attendees.filter((a) => ManagerApp.eventId === "todos" || a.eventId === ManagerApp.eventId); },
   list() {
-    const f = ManagerApp.filter;
-    return this.inScope().filter((a) => {
-      const okF = f === "todos" || (f === "pendientes" ? a.status === "confirmado" && !a.checkedInAt : f === "presentes" ? !!a.checkedInAt : f === "sin-confirmar" ? a.status === "pendiente" : a.status === "cancelado");
-      const q = ManagerApp.search; return okF && (!q || matches(a.name, q) || matches(a.email, q));
-    });
+    const f = ManagerApp.attFilter, q = ManagerApp.search;
+    return this.inScope().filter((a) => (f === "todos" || a.status === f) && (!q || matches(a.name, q) || matches(a.email, q)));
   },
-  attModalHtml() {
-    if (!ManagerApp.attModal) return "";
-    const f = ManagerApp.attForm, H = "manager:attForm", evOpts = Object.fromEntries(ManagerApp.active().map((e) => [e.id, e.name]));
-    return `<div class="modal-backdrop" data-click="manager:attClose" data-backdrop><div class="modal" style="--w:480px" role="dialog" aria-modal="true">
-          <h2 class="modal-title">Registrar asistente</h2><div class="form-stack">
-            ${field("Nombre completo", textInput({ key: "name", value: f.name, handler: H }))}
-            ${field("Correo electrónico", textInput({ key: "email", type: "email", value: f.email, handler: H }))}
-            ${field("Teléfono", textInput({ key: "phone", type: "tel", value: f.phone, handler: H }))}
-            ${field("Evento", selectInput({ key: "eventId", options: evOpts, value: f.eventId, handler: H }), "Se descuenta un cupo del evento.")}</div>
-          ${ManagerApp.attError ? `<p class="auth-error" role="alert" style="margin-top:14px">${esc(ManagerApp.attError)}</p>` : ""}
-          <div class="modal-form-actions"><button class="btn btn-outline btn-block" data-click="manager:attClose">Cancelar</button><button class="btn btn-primary btn-block" data-click="manager:attSave">Registrar</button></div></div></div>`;
+  /** Cancelar una RESERVA exige la causa (columna RESERVA.causa_cancelacion) */
+  cancelModalHtml() {
+    const r = ManagerApp.cancelRes; if (!r) return "";
+    return `<div class="modal-backdrop" data-click="manager:resCancelClose" data-backdrop><div class="modal modal-confirm" role="dialog" aria-modal="true" aria-labelledby="rc-title">
+        <h3 class="modal-confirm-title" id="rc-title">Cancelar la reserva de ${esc(r.name)}</h3>
+        <p class="modal-confirm-text">${esc(r.eventName)} · ${r.tickets} ${r.tickets === 1 ? "entrada" : "entradas"} · ${cop(r.total)}.<br>Se libera el cupo, se simula el reembolso y se revierten los puntos.</p>
+        <label class="field-label" for="rc-causa" style="margin-top:12px">Causa de la cancelación</label>
+        <textarea id="rc-causa" class="input" rows="3" maxlength="500" placeholder="Ej. El cliente no puede asistir" data-input="manager:causaInput" style="resize:vertical;min-height:84px">${esc(ManagerApp.cancelCausa)}</textarea>
+        ${ManagerApp.cancelError ? `<p class="auth-error" role="alert" style="margin-top:10px">${esc(ManagerApp.cancelError)}</p>` : ""}
+        <div class="modal-actions"><button class="btn btn-outline" data-click="manager:resCancelClose">Volver</button>
+          <button class="btn btn-danger" data-click="manager:resCancelSave" ${ManagerApp.cancelBusy ? "disabled" : ""}>${ManagerApp.cancelBusy ? "Cancelando…" : "Cancelar reserva"}</button></div></div></div>`;
   },
   render() {
     const evOpts = { todos: "Todos los eventos", ...Object.fromEntries(Data.events.filter((e) => e.status !== "cancelado").map((e) => [e.id, e.name])) };
     const scope = this.inScope(), conf = scope.filter((a) => a.status === "confirmado");
-    const rows = this.list().map((a) => {
-      const action = a.status === "confirmado"
-        ? `<button class="btn ${a.checkedInAt ? "btn-outline" : "btn-primary"} btn-sm" data-click="manager:checkin" data-id="${a.id}">${a.checkedInAt ? "Deshacer" : "Check-in"}</button>`
-        : a.status === "pendiente" ? `<button class="btn btn-outline btn-sm" data-click="manager:confirmAtt" data-id="${a.id}">Confirmar</button>` : `<span class="readonly">—</span>`;
+    const tickets = conf.reduce((s, a) => s + (a.tickets || 1), 0);
+    const rows = this.list().slice(0, 300).map((a) => {
+      const action = a.status === "pendiente"
+        ? `<button class="btn btn-outline btn-sm" data-click="manager:confirmAtt" data-id="${a.id}">Confirmar</button>` : "";
+      const cancel = a.status !== "cancelado"
+        ? `<button class="btn btn-outline btn-sm" data-click="manager:resCancelOpen" data-id="${a.id}" aria-label="Cancelar la reserva de ${esc(a.name)}">Cancelar</button>` : "";
+      const note = a.status === "cancelado" && a.cancelReason ? `<div style="font-size:12px;color:var(--muted)" title="${esc(a.cancelReason)}">Causa: ${esc(a.cancelReason.length > 60 ? a.cancelReason.slice(0, 60) + "…" : a.cancelReason)}</div>` : "";
       return `<tr><td><div class="row" style="gap:12px"><div class="avatar" style="width:38px;height:38px;font-size:13px;background:${avatarColor(a.name)}">${esc(initials(a.name))}</div>
           <div><div style="font-size:14px;font-weight:500">${esc(a.name)}</div><div style="font-size:12px;color:var(--muted)">${esc(a.email)}</div></div></div></td>
-        <td style="font-size:13px;max-width:220px"><div class="ellipsis">${esc(a.eventName)}</div></td><td>${statusBadge(a.status)}</td>
-        <td style="font-size:13px;color:var(--muted)">${a.checkedInAt ? new Date(a.checkedInAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
-        <td><div class="row" style="gap:8px">${action}<button class="icon-btn" title="Eliminar asistente" aria-label="Eliminar a ${esc(a.name)}" data-click="manager:attAskDelete" data-id="${a.id}">${icon("trash", 15)}</button></div></td></tr>`;
+        <td style="font-size:13px;max-width:220px"><div class="ellipsis">${esc(a.eventName)}</div></td>
+        <td style="font-size:13px">${a.tickets}</td><td style="font-size:13px">${cop(a.total)}</td>
+        <td>${statusBadge(a.status)}${note}</td>
+        <td style="font-size:13px;color:var(--muted)">${a.registeredAt ? parseDate(String(a.registeredAt).slice(0, 10)).toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
+        <td><div class="row" style="gap:8px">${action}${cancel || (action ? "" : `<span class="readonly">—</span>`)}</div></td></tr>`;
     }).join("");
-    const pills = [["todos", "Todos"], ["pendientes", "Por ingresar"], ["presentes", "Presentes"], ["sin-confirmar", "Sin confirmar"], ["cancelados", "Cancelados"]].map(([k, l]) =>
-      `<button class="pill ${ManagerApp.filter === k ? "active" : ""}" data-click="manager:filter" data-value="${k}">${l}</button>`).join("");
+    const pills = [["todos", "Todas"], ["confirmado", "Confirmadas"], ["pendiente", "Pendientes"], ["cancelado", "Canceladas"]].map(([k, l]) =>
+      `<button class="pill ${ManagerApp.attFilter === k ? "active" : ""}" data-click="manager:attFilter" data-value="${k}">${l}</button>`).join("");
     return `<div class="page" style="--w:1680px">
-        ${pageHeader({ eyebrow: "Operación", title: "Gestión de asistentes", subtitle: `Check-in: ${conf.filter((a) => a.checkedInAt).length} de ${conf.length} confirmados.`, action: `<button class="btn btn-primary" data-click="manager:attOpen">${icon("plus", 16, { width: 2.5 })} Registrar asistente</button>`, })}
+        ${pageHeader({ eyebrow: "Operación", title: "Gestión de reservas", subtitle: `${conf.length} reservas confirmadas · ${tickets} entradas.` })}
         <div class="row" style="gap:12px;margin-bottom:16px;flex-wrap:wrap">${searchBox({ id: "mgr-search", placeholder: "Buscar por nombre o email…", value: ManagerApp.search, handler: "manager:search" })}
           <select id="mgr-event" class="input" style="max-width:320px" aria-label="Filtrar por evento" data-input="manager:event">${Object.entries(evOpts).map(([k, l]) => `<option value="${esc(k)}" ${k === ManagerApp.eventId ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
         <div class="filters scroll-x" style="margin-bottom:16px">${pills}</div>
-        <div class="card"><div class="table-scroll"><table class="table"><thead><tr><th>Asistente</th><th>Evento</th><th>Estado</th><th>Ingreso</th><th>Acciones</th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Sin asistentes para mostrar.</td></tr>`}</tbody></table></div></div>
-        ${this.attModalHtml()}
-        ${ManagerApp.attDeleteId ? confirmModal({ title: "¿Eliminar asistente?", cancelAction: "manager:attCancelDelete", confirmAction: "manager:attConfirmDelete" }) : ""}</div>`;
+        <div class="card"><div class="table-scroll"><table class="table"><thead><tr><th>Cliente</th><th>Evento</th><th>Entradas</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="7" style="text-align:center;color:var(--muted)">Sin reservas para mostrar.</td></tr>`}</tbody></table></div></div>
+        ${this.cancelModalHtml()}</div>`;
   },
 };
-bindForm("manager:attForm", () => ManagerApp.attForm);
-registerInput({ "manager:capInput": (el) => { ManagerApp.capValue = +el.value; }, "manager:event": (el) => { ManagerApp.eventId = el.value; rerender(); }, "manager:search": (el) => { ManagerApp.search = el.value; rerender(); } });
+registerInput({ "manager:causaInput": (el) => { ManagerApp.cancelCausa = el.value; }, "manager:capInput": (el) => { ManagerApp.capValue = +el.value; }, "manager:event": (el) => { ManagerApp.eventId = el.value; rerender(); }, "manager:search": (el) => { ManagerApp.search = el.value; rerender(); } });
 registerClick({
   "nav:manager": (el) => { ManagerApp.view = el.dataset.view; App.render({ resetScroll: true }); },
   "manager:newEvent": () => { ManagerApp.view = "eventos"; MgrEventsPage.openNew(); App.render({ resetScroll: true }); },
@@ -234,33 +233,28 @@ registerClick({
     ManagerApp.capModal = null; await syncData();
   },
   "manager:filter": (el) => { ManagerApp.filter = el.dataset.value; rerender(); },
-  "manager:checkin": async (el) => {
-    const a = Data.attendees.find((x) => x.id === el.dataset.id); if (!a || a.status !== "confirmado") return;
-    const isCheckingIn = !a.checkedInAt;
-    await apiSend('PUT', `/attendees/${a.id}/checkin`, {checkin: isCheckingIn, agentId: Session.user.id});
-    await syncData();
-  },
+  "manager:attFilter": (el) => { ManagerApp.attFilter = el.dataset.value; rerender(); },
   "manager:confirmAtt": async (el) => {
-    const a = Data.attendees.find((x) => x.id === el.dataset.id); 
-    if (a && a.status === "pendiente") {
-      await apiSend('PUT', `/attendees/${a.id}/status`, {status: 'confirmado'});
+    const a = Data.attendees.find((x) => String(x.id) === el.dataset.id);
+    if (a && a.status === "pendiente" && await apiSend("PUT", `/attendees/${a.id}/status`, { status: "confirmado" })) await syncData();
+  },
+  "manager:resCancelOpen": (el) => {
+    const a = Data.attendees.find((x) => String(x.id) === el.dataset.id); if (!a) return;
+    Object.assign(ManagerApp, { cancelRes: { id: a.id, name: a.name, eventName: a.eventName, tickets: a.tickets, total: a.total }, cancelCausa: "", cancelError: "", cancelBusy: false });
+    rerender();
+    const t = document.getElementById("rc-causa"); if (t) t.focus();
+  },
+  "manager:resCancelClose": () => { if (ManagerApp.cancelBusy) return; ManagerApp.cancelRes = null; rerender(); },
+  "manager:resCancelSave": async () => {
+    const r = ManagerApp.cancelRes; if (!r || ManagerApp.cancelBusy) return;
+    const causa = ManagerApp.cancelCausa.trim();
+    if (causa.length < 3) { ManagerApp.cancelError = "Escribe la causa de la cancelación (mínimo 3 caracteres)."; rerender(); return; }
+    ManagerApp.cancelBusy = true; ManagerApp.cancelError = ""; rerender();
+    try {
+      await api.post(`/reservas/${r.id}/cancel`, { actorId: Session.user.id, causa });
+      ManagerApp.cancelRes = null; ManagerApp.cancelBusy = false;
+      Toast.show("Reserva cancelada.", "ok", 3000);
       await syncData();
-    }
-  },
-  "manager:attOpen": () => { ManagerApp.attForm = attBlank(); ManagerApp.attError = ""; ManagerApp.attModal = true; rerender(); },
-  "manager:attClose": () => { ManagerApp.attModal = false; rerender(); },
-  "manager:attSave": async () => {
-    const f = ManagerApp.attForm, ev = ManagerApp.find(f.eventId);
-    if (!f.name.trim() || !/^\S+@\S+\.\S+$/.test(f.email.trim())) { ManagerApp.attError = "Escribe el nombre y un correo válido."; rerender(); return; }
-    if (!ev) { ManagerApp.attError = "Elige un evento."; rerender(); return; }
-    if (ev.registered >= ev.capacity) { ManagerApp.attError = "Este evento no tiene cupos libres."; rerender(); return; }
-    await apiSend('POST', '/attendees/manual', {eventId: ev.id, name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim()});
-    ManagerApp.attModal = false; await syncData();
-  },
-  "manager:attAskDelete": (el) => { ManagerApp.attDeleteId = el.dataset.id; rerender(); },
-  "manager:attCancelDelete": () => { ManagerApp.attDeleteId = null; rerender(); },
-  "manager:attConfirmDelete": async () => {
-    await apiSend('DELETE', `/attendees/${ManagerApp.attDeleteId}`);
-    ManagerApp.attDeleteId = null; await syncData();
+    } catch (e) { ManagerApp.cancelBusy = false; ManagerApp.cancelError = e.message; rerender(); }
   },
 });

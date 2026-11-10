@@ -7,7 +7,7 @@ const ADMIN_PERMISSIONS = [
   { ok: true,  text: "Ver todos los Usuarios y Agentes registrados" },
   { ok: true,  text: "Activar, desactivar y eliminar cuentas" },
   { ok: false, text: "No crea, edita ni elimina eventos (lo hace el Agente)" },
-  { ok: false, text: "No gestiona asistentes, calendario ni tareas" },
+  { ok: false, text: "No gestiona reservas, calendario ni eventos" },
 ];
 
 const PROFILE_FIELDS = [

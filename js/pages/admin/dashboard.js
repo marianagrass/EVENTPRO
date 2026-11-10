@@ -4,7 +4,7 @@
      · Dinero recaudado (suma de lo pagado por cada inscrito)
      · Reporte de ingresos por mes (integral) y monitor de tráfico (reports.js)
      · Ingresos por categoría (tipo de evento)
-     · Crecimiento de usuarios registrados (cuentas con rol «user», por mes)
+     · Clientes registrados por ciudad (CLIENTE → PERSONA → CIUDAD)
      · Ocupación global (inscritos / aforo)
    Todo se calcula en vivo con Data.events y Data.accounts: si el Agente cambia un precio
    o el Admin elimina una cuenta, las cifras se actualizan.
@@ -33,58 +33,22 @@ const FinanceStats = {
     return Object.entries(map).map(([type, value]) => ({ type, value, share: percent(value, total) })).sort((a, b) => b.value - a.value);
   },
 
-  /** Usuarios registrados por mes: nuevos y acumulados */
-  userGrowth() {
-    const users = Data.accounts.filter((a) => a.role === "user");
-    if (!users.length) return [];
-    const keys = users.map((u) => u.createdAt.slice(0, 7)).sort();
-    let [y, m] = keys[0].split("-").map(Number);
-    const [ey, em] = keys[keys.length - 1].split("-").map(Number);
-    const out = [];
-    let acc = 0;
-    while (y < ey || (y === ey && m <= em)) {
-      const key = `${y}-${String(m).padStart(2, "0")}`;
-      const added = users.filter((u) => u.createdAt.startsWith(key)).length;
-      acc += added;
-      out.push({ key, label: new Date(y, m - 1, 1).toLocaleString("es-CO", { month: "short" }).replace(".", ""), added, total: acc });
-      if (++m > 12) { m = 1; y++; }
-    }
-    return out;
+  /** Clientes por ciudad (PERSONA.id_ciudad → CIUDAD): las 8 ciudades con más clientes */
+  clientsByCity() {
+    const map = new Map();
+    Data.accounts.filter((a) => a.role === "user").forEach((u) => { const k = u.city || "Sin ciudad"; map.set(k, (map.get(k) || 0) + 1); });
+    return [...map.entries()].map(([city, n]) => ({ city, n })).sort((x, y) => y.n - x.n).slice(0, 8);
   },
 };
 
 const DashboardPage = {
-  /* Gráfico de línea: usuarios acumulados + barras de nuevos usuarios por mes */
-  growthChart(series) {
-    if (series.length < 2) return `<p class="fin-empty">Aún no hay suficientes datos de registro.</p>`;
-    const W = 640, H = 250, L = 40, R = 14, T = 16, B = 34;
-    const maxT = Math.max(...series.map((s) => s.total));
-    const niceMax = Math.ceil(maxT / 10) * 10 || 10;
-    const x = (i) => L + (i * (W - L - R)) / (series.length - 1);
-    const y = (v) => T + (1 - v / niceMax) * (H - T - B);
-    const maxAdd = Math.max(...series.map((s) => s.added)) || 1;
-    const bw = Math.min(26, (W - L - R) / series.length - 10);
-
-    const grid = [0, 0.25, 0.5, 0.75, 1].map((t) => {
-      const v = Math.round(niceMax * t), yy = y(v);
-      return `<line class="fin-grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text class="fin-axis" x="${L - 8}" y="${yy + 4}" text-anchor="end">${v}</text>`;
-    }).join("");
-    const bars = series.map((s, i) => {
-      const h = (s.added / maxAdd) * 54;
-      return `<rect class="fin-bar" x="${x(i) - bw / 2}" y="${H - B - h}" width="${bw}" height="${h}" rx="4"><title>${s.added} nuevos en ${s.label}</title></rect>`;
-    }).join("");
-    const pts = series.map((s, i) => `${x(i)},${y(s.total)}`).join(" ");
-    const area = `${L},${H - B} ${pts} ${x(series.length - 1)},${H - B}`;
-    const dots = series.map((s, i) => `<circle class="fin-dot" cx="${x(i)}" cy="${y(s.total)}" r="4.5"><title>${s.total} usuarios al cierre de ${s.label}</title></circle>`).join("");
-    const labels = series.map((s, i) => `<text class="fin-axis" x="${x(i)}" y="${H - 10}" text-anchor="middle">${s.label}</text>`).join("");
-    return `
-      <svg class="fin-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Usuarios registrados por mes: de ${series[0].total} en ${series[0].label} a ${series[series.length - 1].total} en ${series[series.length - 1].label}">
-        ${grid}${bars}
-        <polygon class="fin-area" points="${area}"/>
-        <polyline class="fin-line" points="${pts}" fill="none"/>
-        ${dots}${labels}
-      </svg>
-      <div class="fin-legend"><span><i class="fin-key fin-key-line"></i>Usuarios acumulados</span><span><i class="fin-key fin-key-bar"></i>Nuevos por mes</span></div>`;
+  /* Barras horizontales: clientes registrados por ciudad */
+  cityBars(rows) {
+    if (!rows.length) return `<p class="fin-empty">Aún no hay clientes registrados.</p>`;
+    const max = Math.max(...rows.map((r) => r.n), 1);
+    return `<div class="col-stack" style="gap:12px">${rows.map((r) => `
+      <div><div class="row" style="justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${esc(r.city)}</span><strong>${r.n}</strong></div>
+        <div class="bar bar-thin"><div class="bar-fill" style="width:${Math.round((r.n / max) * 100)}%;background:var(--primary-fg)"></div></div></div>`).join("")}</div>`;
   },
 
   donut(pct) {
@@ -100,15 +64,14 @@ const DashboardPage = {
 
   render() {
     const t = FinanceStats.totals();
-    const growth = FinanceStats.userGrowth();
+    const byCity = FinanceStats.clientsByCity();
     const cats = FinanceStats.byCategory();
     const users = Data.accounts.filter((a) => a.role === "user");
-    const last = growth[growth.length - 1], prev = growth[growth.length - 2];
-    const growthPct = last && prev && prev.total ? Math.round(((last.total - prev.total) / prev.total) * 100) : 0;
+    const cityCount = new Set(users.map((u) => u.city)).size;
 
     const kpis = [
       { label: "Dinero total recaudado", value: copCompact(t.revenue), sub: `${cop(t.revenue)} · ${cop(t.realized)} ya realizados`, ic: "dollar" },
-      { label: "Usuarios registrados",   value: users.length, sub: `${last ? last.added : 0} nuevos este mes · ${growthPct >= 0 ? "+" : ""}${growthPct}% de crecimiento`, ic: "users" },
+      { label: "Usuarios registrados",   value: users.length, sub: `en ${cityCount} ${cityCount === 1 ? "ciudad" : "ciudades"} · ${Data.accounts.length} cuentas en total`, ic: "users" },
       { label: "Ocupación global",       value: `${t.occupancy}%`, sub: `${t.reg.toLocaleString("es-CO")} inscritos de ${t.cap.toLocaleString("es-CO")} cupos`, ic: "gauge" },
       { label: "Boletas vendidas",       value: t.tickets.toLocaleString("es-CO"), sub: "en eventos con cover o boletería", ic: "ticket" },
     ].map((k) => `
@@ -146,8 +109,8 @@ const DashboardPage = {
 
         <div class="fin-grid2">
           <div class="card fin-card">
-            <div class="card-head"><h2>Crecimiento de usuarios registrados</h2><span class="fin-note">${users.length} cuentas de usuario</span></div>
-            <div class="fin-pad">${this.growthChart(growth)}</div>
+            <div class="card-head"><h2>Clientes por ciudad</h2><span class="fin-note">${users.length} clientes</span></div>
+            <div class="fin-pad">${this.cityBars(byCity)}</div>
           </div>
           <div class="card fin-card">
             <div class="card-head"><h2>Ocupación global</h2></div>

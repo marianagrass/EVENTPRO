@@ -55,9 +55,12 @@ const Session = {
     return this.set(data);
   },
 
-  async register({ name, email, password }) {
-    // El rol NO se envía: el servidor siempre crea cuentas "user". Agentes y admins los gestiona el Admin.
-    const data = await AuthApi.register({ name: String(name).trim(), email: String(email).trim().toLowerCase(), password });
+  async register({ identificacion, name, email, password, cityId, address, phone }) {
+    // El rol NO se envía: el servidor siempre crea un CLIENTE (PERSONA + CLIENTE). Agentes y admins los gestiona el Admin.
+    const data = await AuthApi.register({
+      identificacion: String(identificacion).trim(), name: String(name).trim(), email: String(email).trim().toLowerCase(), password,
+      cityId: Number(cityId), address: String(address || "").trim(), phone: String(phone || "").trim(),
+    });
     return this.set(data);
   },
 

@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const coreRoutes = require("./routes/core");
 const paymentRoutes = require("./routes/payments");
+const createModels = require("./models");
 const { handleError } = require("./lib/http-errors");
 
 function createApp({ pool, traffic }) {
@@ -17,8 +18,9 @@ function createApp({ pool, traffic }) {
     catch (_) { res.status(503).json({ ok: false, error: "Sin conexión con la base de datos." }); }
   });
 
-  const payments = paymentRoutes({ pool, traffic });
-  app.use("/api", coreRoutes({ pool }));
+  const models = createModels(pool);
+  const payments = paymentRoutes({ models, traffic });
+  app.use("/api", coreRoutes({ models }));
   app.use("/api", payments.router);
 
   // JSON mal formado, rutas inexistentes y cualquier error que se escape

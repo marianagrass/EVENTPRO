@@ -42,6 +42,17 @@ module.exports = {
     roundToCop: 500,
   },
 
+  /* ----- Precio ideal del Agente: D(x) = M − kx · I(x) = x(M − kx) · x* = M/2k ----- */
+  priceOptimization: {
+    minSamples: 4,                   // eventos pagos del mismo tipo para estimar M y k con regresión
+    minDistinctPrices: 3,            // …y con al menos 3 precios distintos (si no, no hay curva que ajustar)
+    minR2: 0.3,                      // calidad mínima del ajuste; por debajo se usa la estimación inicial
+    marketFactor: 1.5,               // sin historial: M = 1,5 × aforo (gente que iría si fuera gratis)
+    defaultZeroDemandPriceCop: 100000, // sin historial: precio al que NADIE compraría (= M/k)
+    roundToCop: 500,
+    maxCapacity: 200000,
+  },
+
   /* ----- Modelo de saturación: T(x) = k/(C − x) + Tb ----- */
   traffic: {
     C: num("TRAFFIC_C", 100),        // capacidad máxima de conexiones simuladas

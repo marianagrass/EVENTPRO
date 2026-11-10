@@ -1,5 +1,7 @@
 # Plan para montar la base de datos de EventPro en Neon (PostgreSQL)
 
+> **V10:** este documento describe el esquema anterior (V1–V9: `001_schema.sql`, `002_seed.sql`…). El esquema vigente es el del Modelo ER del tutor: ver [`MODELO_ER.md`](MODELO_ER.md). Los pasos de Neon (crear proyecto, cadena de conexión, `.env`) siguen siendo válidos; lo que cambia son los scripts SQL a ejecutar.
+
 > Pensado para un equipo que **nunca ha usado Neon ni una base de datos en la nube**. Está en orden: primero qué es cada cosa, luego qué se hace, en qué orden y cómo saber que quedó bien.
 
 ---

@@ -21,7 +21,7 @@ const AuthModal = {
   view: "login",
   pending: null,
   reason: null,
-  values: { name: "", email: "", password: "", confirm: "" },
+  values: { identificacion: "", name: "", email: "", password: "", confirm: "", cityId: "", address: "", phone: "" },
   errors: {},
   formError: "",
   notice: "",
@@ -29,7 +29,7 @@ const AuthModal = {
   dirty: false,
   _focus: null,                    // a dónde llevar el foco tras dibujar: "first" | "invalid" | "password" | "alert"
 
-  blank() { return { name: "", email: "", password: "", confirm: "" }; },
+  blank() { return { identificacion: "", name: "", email: "", password: "", confirm: "", cityId: "", address: "", phone: "" }; },
 
   /** Deja el modal cerrado y limpio, sin volver a dibujar (login, logout) */
   reset() {
@@ -88,8 +88,8 @@ const AuthModal = {
 
     this.setBusy(true);
     try {
-      const { name, email, password } = this.values;                  // el rol NO se envía: el servidor crea siempre "user"
-      const user = await Session.register({ name, email, password }); // → POST /api/auth/register  { name, email, password }
+      const user = await Session.register(this.values);              // el rol NO se envía: el servidor crea siempre un CLIENTE
+                                                                      // → POST /api/personas  { identificacion, name, email, password, cityId, address, phone }
       this.succeed(user);
     } catch (err) {
       this.handleError(err);

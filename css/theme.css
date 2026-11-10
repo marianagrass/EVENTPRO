@@ -51,3 +51,11 @@
 
 ::placeholder { color: var(--muted); opacity: .7; }
 ::selection { background: rgba(106,44,255,.28); }
+
+/* Listas desplegables nativas (<select>): en modo oscuro el popup debe usar el mismo grafito y texto claro.
+   Sin esto, el texto de las opciones heredaba el color claro del select sobre un fondo blanco del sistema. */
+select { color-scheme: light; }
+:root[data-theme="dark"] select { color-scheme: dark; }
+select option, select optgroup { background-color: var(--surface); color: var(--text); }
+select option:disabled { color: var(--muted); }
+select option:checked { background-color: var(--primary); color: #fff; }

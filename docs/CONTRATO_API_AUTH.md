@@ -26,7 +26,7 @@ Cuando todo funcione, **elimina** `MOCK_CREDENTIALS` (en `js/data.js`), `MockAut
 | Agente | `agente@eventpro.com` | `123456` | Dashboard operativo |
 | Usuario | `user@eventpro.com` | `123456` | Home con su avatar |
 
-Con el mock, **cualquier cuenta** de Admin → Gestión de cuentas también entra con `123456`. El seed SQL (`backend/db/002_seed.sql`) usa los mismos correos y la misma contraseña, así que las pruebas siguen valiendo con la base real.
+Con el mock, **cualquier cuenta** de Admin → Gestión de cuentas también entra con `123456`. El seed SQL (`backend/db/013_datos_demo.sql`) usa los mismos correos y la misma contraseña, así que las pruebas siguen valiendo con la base real.
 
 ---
 
@@ -34,8 +34,8 @@ Con el mock, **cualquier cuenta** de Admin → Gestión de cuentas también entr
 
 | Método y ruta | Body | Éxito | Errores |
 |---|---|---|---|
-| `POST /api/auth/login` | `{ email, password }` | `200 { token, user }` | `401` datos incorrectos · `403` cuenta suspendida |
-| `POST /api/auth/register` | `{ name, email, password }` | `201 { token, user }` | `409` correo repetido · `422` datos inválidos |
+| `POST /api/auth/login` | `{ email, password }` | `200 { token, user }` | `401` datos incorrectos |
+| `POST /api/auth/register` | `{ identificacion, name, email, password, cityId, address?, phone? }` | `201 { token, user }` | `409` correo repetido · `422` datos inválidos |
 | `POST /api/auth/forgot-password` | `{ email }` | `200 { message }` (siempre) | — |
 | `GET /api/auth/me` | — (`Authorization: Bearer <token>`) | `200 { user }` | `401` sesión vencida |
 | `POST /api/auth/logout` | — | `200 { ok: true }` | — |

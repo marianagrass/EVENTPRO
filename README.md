@@ -6,13 +6,15 @@ El frontend no usa frameworks; el backend es Node/Express con PostgreSQL (Neon).
 ## Cómo ejecutarlo
 1. `npm install`
 2. Copia `.env.example` como `.env` y pon tu `DATABASE_URL` de Neon.
-3. En el *SQL Editor* de Neon ejecuta, en orden: `backend/db/001_schema.sql`, `002_seed.sql`, **`004_payments.sql`** (y `005_payments_checks.sql` para verificar).
+3. **Haz primero una copia (branch) de tu base en Neon: la migración es destructiva.** Luego, en el *SQL Editor*, ejecuta en orden: `backend/db/010_modelo_er.sql` → `011_soporte_negocio.sql` → `012_catalogos.sql` → (opcional, datos de prueba) `013_datos_demo.sql` → `014_verificaciones.sql`. Detalle en **[`docs/MODELO_ER.md`](docs/MODELO_ER.md)**.
 4. `npm start` → API en `http://localhost:3000`.
 5. Abre `index.html` (mejor con la extensión *Live Server* de VS Code). Si el backend está apagado, la página lo avisa con un banner y un botón «Reintentar».
 
 Otra dirección de API: define `window.EVENTPRO_API_URL` antes de los scripts (ver `js/config.js`).
 
-**Novedades(pagos y cálculo):** checkout con pago simulado, zonas y puntos, fila virtual, comisiones del Agente, reporte de ingresos 2026 por integral, estados «Últimos cupos/Agotado» y precios dinámicos. Todo explicado en **[`docs/PAGOS_Y_CALCULO.md`](docs/PAGOS_Y_CALCULO.md)**.
+**Modelo ER del tutor:** PERSONA con herencia (CLIENTE · AGENTE · ADMINISTRADOR), geografía País › Departamento › Ciudad, catálogos de estado y RESERVA con causa de cancelación. Todo en **[`docs/MODELO_ER.md`](docs/MODELO_ER.md)**.
+
+**Novedades** checkout con pago simulado, zonas y puntos, fila virtual, comisiones del Agente, reporte de ingresos 2026 por integral, estados «Últimos cupos/Agotado», precios dinámicos y **precio ideal sugerido** para el Agente (derivadas). Todo explicado en **[`docs/PAGOS_Y_CALCULO.md`](docs/PAGOS_Y_CALCULO.md)**.
 
 > Las fuentes y las fotos de los eventos vienen de internet; sin conexión la app funciona con fuentes del sistema y sin fotos.
 
@@ -45,8 +47,8 @@ eventpro-html/
 | Rol | Qué ve | Archivos |
 |---|---|---|
 | **Visitante / Usuario** | El **mismo Home** (carrusel, buscador, filtros). Con sesión, el Navbar muestra el avatar con menú (Mi panel, Mis inscripciones, Historial, Perfil y configuración, Cerrar sesión) y las tarjetas muestran «Inscrito». «Mi panel» es una vista aparte con botón «Volver a explorar eventos». | `pages/public/guest-home.js`, `pages/user/user-app.js`, `pages/user/user-account.js` |
-| **Agente** (operación total) | Dashboard operativo · Gestión de eventos (crear, editar, eliminar, **precio**, **disponibilidad**) · Calendario · Cupos y aforo · Asistentes (lista + check-in + alta manual) · Tareas | `pages/manager/*` |
-| **Administrador** (finanzas y cuentas) | Finanzas y estadísticas (dinero recaudado, ingresos por categoría, crecimiento de usuarios, ocupación global) · Gestión de cuentas (filtrar por rol/estado, activar/desactivar, eliminar) · Perfil. **No** opera eventos. | `pages/admin/*` |
+| **Agente** (operación total) | Dashboard operativo · Gestión de eventos (crear, editar, **cancelar con causa**, **precio**, **disponibilidad**) · Calendario · Cupos y aforo · Reservas (confirmar / cancelar con causa) | `pages/manager/*` |
+| **Administrador** (finanzas y cuentas) | Finanzas y estadísticas (dinero recaudado, ingresos por categoría, clientes por ciudad, ocupación global) · Gestión de cuentas (filtrar por rol, crear Agentes con identificación y ciudad, cambiar rol, eliminar) · Perfil. **No** opera eventos. | `pages/admin/*` |
 
 **Modal de evento único** (`components/event-modal.js`): lo dibuja `PublicLayout` sobre el Home. Su estado es solo `EventModal.eventId` (+ `done`/`error`) y el evento se lee siempre de `Data.events`. Flujo del visitante: «Inscribirse» → `Guard.promptLogin` guarda `Guard.pending = { eventId }` → login → `Guard.resume` entra a la sesión, redibuja el Home y recién ahí llama `EventModal.open(eventId)`.
 La caja de cupos usa la clase `.evm-info` (`css/panels.css`) con variables de tema: gris suave en claro; fondo translúcido + borde sutil + texto claro en oscuro.
@@ -54,18 +56,18 @@ La caja de cupos usa la clase `.evm-info` (`css/panels.css`) con variables de te
 **Datos conectados entre roles** (`js/data.js`):
 - `ev.price` (COP, 0 = gratis). Recaudo = `price × registered` (`eventRevenue(ev)`); lo calcula el Admin en vivo.
 - Inscribirse / cancelar (`UserApp.register/unregister`) cambia `ev.registered` y crea/quita al asistente: el Agente lo ve en «Asistentes» y el Admin en las cifras.
-- `Data.accounts` (usuarios y agentes). Si el Admin **suspende o elimina** una cuenta demo (Carlos Mejía / Carmen López), el login la rechaza.
+- `Data.accounts` (PERSONA + su subclase). Si el Admin **elimina** una cuenta demo (Carlos Mejía / Carmen López), el login la rechaza.
 - Imágenes de los eventos nuevos: URLs de Unsplash; si alguna no carga se ve el degradado del tipo. Cámbialas en el campo `image` de cada evento.
 
 ## Autenticación (Login / Registro)
 `AuthModal` (diseño dividido, modo claro/oscuro) reemplaza los antiguos atajos por rol. Código en `js/components/auth/` (`LoginForm`, `RegisterForm`, `ForgotForm`, `AuthModal`), estado en `js/core/session.js` (`Session`, `AuthFlow`, `Guard`) y peticiones en `js/core/auth-service.js`.
 - **Probar ahora (modo mock):** `admin@eventpro.com`, `agente@eventpro.com`, `user@eventpro.com`, contraseña `123456`.
 - **Conectar tu backend:** `AuthConfig.USE_MOCK = false` y `API_BASE`. Contrato y ejemplo en [`docs/CONTRATO_API_AUTH.md`](docs/CONTRATO_API_AUTH.md).
-- El registro público solo crea cuentas **Usuario**; el Admin crea Agentes y cambia roles desde «Gestión de cuentas».
+- El registro público pide identificación, nombre, correo, **ciudad** (y opcionalmente dirección y teléfono) y solo crea cuentas **Cliente**; el Admin crea Agentes y cambia roles desde «Gestión de cuentas».
 
 ## Base de datos (Neon / PostgreSQL)
 El plan completo para principiantes está en **[`docs/PLAN_BASE_DE_DATOS_NEON.md`](docs/PLAN_BASE_DE_DATOS_NEON.md)**.
-Scripts listos en `backend/db/` (se ejecutan en este orden en el *SQL Editor* de Neon): `001_schema.sql` (tablas, reglas y vistas) → `002_seed.sql` (datos de prueba equivalentes a `js/data.js`) → `003_checks.sql` (verificación). `000_reset.sql` borra todo para empezar de nuevo. `backend/legacy/` conserva la migración del modelo anterior solo como referencia.
+Scripts en `backend/db/` (orden: `010_modelo_er.sql` → `011_soporte_negocio.sql` → `012_catalogos.sql` → `013_datos_demo.sql` → `014_verificaciones.sql`). `000_reset.sql` borra todo para empezar de nuevo. Los scripts de quedaron en `backend/db/legacy_v9/` solo como referencia.
 La app lee y escribe todo en la base a través de la API (`backend/`).
 
 ## Cómo funciona (para entender el código)

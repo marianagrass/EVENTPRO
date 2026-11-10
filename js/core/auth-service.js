@@ -12,10 +12,9 @@
    │     200 → { token, user: { id, name, email, role } }                                       │
    │     401 → { error: "Correo o contraseña incorrectos." }       (mismo mensaje si el correo  │
    │                                                                no existe: no revelar cuál) │
-   │     403 → { error: "...", code: "ACCOUNT_SUSPENDED" }          (clave correcta, cuenta     │
-   │                                                                suspendida)                 │
-   │ POST /api/auth/register         body: { name, email, password }     ← NUNCA se envía rol   │
-   │     201 → { token, user }       (el servidor FUERZA role = "user")                         │
+   │ POST /api/auth/register         body: { identificacion, name, email, password, cityId,     │
+   │                                         address?, phone? }          ← NUNCA se envía rol   │
+   │     201 → { token, user }       (crea PERSONA + CLIENTE; el servidor FUERZA role = "user")  │
    │     409 → { error: "...", fields: { email: "Ya existe una cuenta con este correo." } }     │
    │     422 → { error: "...", fields: { name?: "...", email?: "...", password?: "..." } }      │
    │ POST /api/auth/forgot-password  body: { email }                                            │
@@ -90,8 +89,24 @@ const AuthValidators = {
     if (!password) errors.password = "Escribe tu contraseña.";
     return errors;
   },
-  register({ name, email, password, confirm }) {
+  identificacion(v) {
+    const id = String(v || "").trim();
+    if (!id) return "Escribe tu número de identificación.";
+    if (!/^[A-Za-z0-9-]{5,20}$/.test(id)) return "Usa entre 5 y 20 letras, números o guiones.";
+    return "";
+  },
+  cityId(v) { return Number(v) >= 1 ? "" : "Selecciona tu ciudad."; },
+  address(v) { return String(v || "").trim().length > 200 ? "La dirección es demasiado larga (máximo 200 caracteres)." : ""; },
+  phone(v) {
+    const t = String(v || "").trim();
+    return !t || /^[0-9+() -]{7,20}$/.test(t) ? "" : "Escribe un teléfono válido (solo números, espacios, + ( ) -).";
+  },
+  register({ identificacion, name, email, password, confirm, cityId, address, phone }) {
     const errors = {};
+    const i = this.identificacion(identificacion); if (i) errors.identificacion = i;
+    const ci = this.cityId(cityId);                if (ci) errors.cityId = ci;
+    const ad = this.address(address);              if (ad) errors.address = ad;
+    const ph = this.phone(phone);                  if (ph) errors.phone = ph;
     const n = this.name(name);         if (n) errors.name = n;
     const e = this.email(email);       if (e) errors.email = e;
     const p = this.password(password); if (p) errors.password = p;
@@ -156,7 +171,7 @@ const AuthApi = {
 
   /* ----- Métodos públicos: elige real o mock ----- */
   login(creds)    { return AuthConfig.USE_MOCK ? MockAuthServer.login(creds)    : this.request(AuthConfig.ENDPOINTS.login,    { body: { email: creds.email, password: creds.password }, isPublic: true }); },
-  register(data)  { return AuthConfig.USE_MOCK ? MockAuthServer.register(data)  : this.request(AuthConfig.ENDPOINTS.register, { body: { name: data.name, email: data.email, password: data.password }, isPublic: true }); },
+  register(data)  { return AuthConfig.USE_MOCK ? MockAuthServer.register(data)  : this.request(AuthConfig.ENDPOINTS.register, { body: { identificacion: data.identificacion, name: data.name, email: data.email, password: data.password, cityId: data.cityId, address: data.address, phone: data.phone }, isPublic: true }); },
   forgot(email)   { return AuthConfig.USE_MOCK ? MockAuthServer.forgot(email)   : this.request(AuthConfig.ENDPOINTS.forgot,   { body: { email }, isPublic: true }); },
   me(token)       { return AuthConfig.USE_MOCK ? MockAuthServer.me(token)       : this.request(AuthConfig.ENDPOINTS.me,       { method: "GET", token }); },
   logout(token)   { return AuthConfig.USE_MOCK ? Promise.resolve({ ok: true })  : this.request(AuthConfig.ENDPOINTS.logout,   { token, isPublic: true }); },
@@ -173,7 +188,7 @@ const MockAuthServer = {
   _norm(email) { return String(email || "").trim().toLowerCase(); },
   _findAccount(email) { return Data.accounts.find((a) => a.email.toLowerCase() === email) || null; },
   _token(user) { return "mock." + btoa(JSON.stringify({ sub: user.id, role: user.role })); },
-  _publicUser(acc) { return { id: acc.id, name: acc.name, email: acc.email, role: acc.role === "manager" ? "agent" : "user" }; },
+  _publicUser(acc) { return { id: acc.id, name: acc.name, email: acc.email, role: acc.role === "manager" ? "agent" : acc.role === "admin" ? "admin" : "user" }; },
   setPassword(accountId, password) { this.passwords[accountId] = password; },
 
   async login({ email, password }) {
@@ -184,9 +199,9 @@ const MockAuthServer = {
 
     // ¿Existe y la contraseña coincide? (mismo error para "no existe" y "clave mala")
     let valid = false, user = null;
-    if (cred && !cred.accountId) {                       // administrador
+    if (cred && !cred.accountId) {                       // administrador demo
       valid = password === cred.password;
-      user = { id: cred.id, name: cred.name, email: cred.email, role: "admin" };
+      user = { id: cred.id, name: (acc && acc.name) || cred.name, email: cred.email, role: "admin" };
     } else if (acc) {                                    // usuario o agente (incluye las cuentas demo)
       const expected = (cred && cred.accountId === acc.id) ? cred.password : (this.passwords[acc.id] || MOCK_DEFAULT_PASSWORD);
       valid = password === expected;
@@ -194,32 +209,34 @@ const MockAuthServer = {
     }
     if (!valid) throw new AuthError("Correo o contraseña incorrectos.", 401, "INVALID_CREDENTIALS");
 
-    if (acc && acc.status === "suspendido") {
-      throw new AuthError("Tu cuenta está suspendida. Contacta al administrador de la plataforma.", 403, "ACCOUNT_SUSPENDED");
-    }
-    if (acc) acc.lastLogin = inDays(0);
     return { token: this._token(user), user };
   },
 
-  async register({ name, email, password }) {
+  async register(data) {
     await this._delay();
-    // El servidor REPITE la validación (nunca confiar en el front) y FUERZA el rol "user"
-    const fields = {};
-    const n = AuthValidators.name(name);         if (n) fields.name = n;
-    const e = AuthValidators.email(email);       if (e) fields.email = e;
-    const p = AuthValidators.password(password); if (p) fields.password = p;
-    if (Object.keys(fields).length) throw new AuthError("Revisa los datos del formulario.", 422, "VALIDATION", fields);
+    // El servidor REPITE la validación (nunca confiar en el front) y FUERZA el rol "user" (= CLIENTE)
+    const errs = AuthValidators.register({ ...data, confirm: data.password });
+    delete errs.confirm;
+    if (Object.keys(errs).length) throw new AuthError("Revisa los datos del formulario.", 422, "VALIDATION", errs);
 
-    const clean = this._norm(email);
+    const clean = this._norm(data.email);
     if (this._findAccount(clean) || MOCK_CREDENTIALS.some((c) => c.email === clean)) {
       throw new AuthError("Ya existe una cuenta con este correo.", 409, "EMAIL_TAKEN", { email: "Ya existe una cuenta con este correo." });
     }
-    const acc = {
-      id: "u" + Date.now(), name: String(name).trim().replace(/\s+/g, " "), email: clean,
-      role: "user", status: "activo", createdAt: inDays(0), lastLogin: inDays(0),
-    };
-    Data.accounts.push(acc);                              // el Admin la ve en «Gestión de cuentas»
-    this.setPassword(acc.id, password);
+    // Se guarda de verdad en PostgreSQL: PERSONA + CLIENTE (+ TELEFONO_PERSONA) en una sola transacción
+    try {
+      await api.post("/personas", {
+        identificacion: String(data.identificacion).trim(), name: data.name, email: clean, password: data.password,
+        cityId: Number(data.cityId), address: data.address || "", phone: data.phone || "",
+      });
+    } catch (e) {
+      const dup = e.status === 409 || e.status === 422;
+      throw new AuthError(e.message, e.status || 0, e.code || (dup ? "VALIDATION" : "NETWORK"), e.fields || null);
+    }
+    await refreshData();                                  // trae la cuenta nueva (el Admin la ve en «Gestión de cuentas»)
+    const acc = Data.accounts.find((a) => a.id === String(data.identificacion).trim());
+    if (!acc) throw new AuthError("No se pudo cargar tu cuenta recién creada. Inicia sesión.", 500, "SERVER");
+    this.setPassword(acc.id, data.password);
     const user = this._publicUser(acc);
     return { token: this._token(user), user };
   },
@@ -239,7 +256,7 @@ const MockAuthServer = {
     const cred = MOCK_CREDENTIALS.find((c) => c.id === payload.sub && !c.accountId);
     if (cred) return { user: { id: cred.id, name: cred.name, email: cred.email, role: "admin" } };
     const acc = Data.accounts.find((a) => a.id === payload.sub);
-    if (!acc || acc.status !== "activo") throw new AuthError("Sesión inválida.", 401, "INVALID_TOKEN");
+    if (!acc) throw new AuthError("Sesión inválida.", 401, "INVALID_TOKEN");
     return { user: this._publicUser(acc) };
   },
 };

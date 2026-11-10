@@ -51,12 +51,12 @@ const PRIORITY = {
 
 /* ---------- Slides del carrusel del Home ---------- */
 const HERO_SLIDES = [
-  { eventId: "e0000000-0000-4000-8000-000000000001", tag: "Fiesta · Color Fest", title: "Pinta el campus de mil colores", highlight: "mil colores", text: "Polvos de colores, DJs en vivo y una zona de experiencias en las canchas del campus." },
-  { eventId: "e0000000-0000-4000-8000-000000000002", tag: "Concierto · Rock & Indie", title: "Las mejores bandas estudiantiles en vivo", highlight: "bandas estudiantiles", text: "Una noche de guitarras, amplificadores al máximo y mucho talento universitario." },
-  { eventId: "e0000000-0000-4000-8000-000000000003", tag: "Fiesta · Welcome Party", title: "Tu bienvenida empieza con neón", highlight: "neón", text: "Música urbana, electrónica y luces neón para integrarte con toda la comunidad." },
-  { eventId: "e0000000-0000-4000-8000-000000000005", tag: "Fiesta · ElectroFest", title: "Cierra el semestre a todo volumen", highlight: "todo volumen", text: "DJs invitados y un show de luces para despedir el semestre como se debe." },
-  { eventId: "e0000000-0000-4000-8000-000000000004", tag: "Plan al aire libre · Gratis", title: "Atardeceres, food trucks y acústicos", highlight: "acústicos", text: "Una tarde de integración con comida, birras y música suave bajo el cielo del campus." },
-  { eventId: "e0000000-0000-4000-8000-000000000006", tag: "Deportes · Interfacultades", title: "Juega, alienta y gana con tu facultad", highlight: "gana", text: "El torneo donde el campus se llena de camisetas, barras y emoción." },
+  { eventId: "EVT-000001", tag: "Fiesta · Color Fest", title: "Pinta el campus de mil colores", highlight: "mil colores", text: "Polvos de colores, DJs en vivo y una zona de experiencias en las canchas del campus." },
+  { eventId: "EVT-000002", tag: "Concierto · Rock & Indie", title: "Las mejores bandas estudiantiles en vivo", highlight: "bandas estudiantiles", text: "Una noche de guitarras, amplificadores al máximo y mucho talento universitario." },
+  { eventId: "EVT-000003", tag: "Fiesta · Welcome Party", title: "Tu bienvenida empieza con neón", highlight: "neón", text: "Música urbana, electrónica y luces neón para integrarte con toda la comunidad." },
+  { eventId: "EVT-000005", tag: "Fiesta · ElectroFest", title: "Cierra el semestre a todo volumen", highlight: "todo volumen", text: "DJs invitados y un show de luces para despedir el semestre como se debe." },
+  { eventId: "EVT-000004", tag: "Plan al aire libre · Gratis", title: "Atardeceres, food trucks y acústicos", highlight: "acústicos", text: "Una tarde de integración con comida, birras y música suave bajo el cielo del campus." },
+  { eventId: "EVT-000006", tag: "Deportes · Interfacultades", title: "Juega, alienta y gana con tu facultad", highlight: "gana", text: "El torneo donde el campus se llena de camisetas, barras y emoción." },
 ];
 
 /* ---------- ESTADO GLOBAL VACÍO ----------
@@ -98,18 +98,18 @@ function eventRevenue(ev) {
    mientras completas tu endpoint de autenticación con Node.js. */
 const MOCK_DEFAULT_PASSWORD = "123456";
 const MOCK_CREDENTIALS = [
-  { email: "admin@eventpro.com",  password: "123456", role: "admin", id: "a0000000-0000-4000-8000-000000000001", name: "Sofía Navarro" },
-  { email: "agente@eventpro.com", password: "123456", role: "agent", accountId: "a0000000-0000-4000-8000-000000000035" },
-  { email: "user@eventpro.com",   password: "123456", role: "user",  accountId: "a0000000-0000-4000-8000-00000000003a" },
+  { email: "admin@eventpro.com",  password: "123456", role: "admin", id: "1000000001", name: "Sofía Navarro" },
+  { email: "agente@eventpro.com", password: "123456", role: "agent", accountId: "1000000002" },
+  { email: "user@eventpro.com",   password: "123456", role: "user",  accountId: "1100000052" },
 ];
 
 /* ---------- Categorías del Home (píldoras de filtro y tarjetas de categoría) ---------- */
 const HOME_CATEGORIES = [
-  { id: "fiestas",   label: "Fiestas",         types: ["fiesta", "musica"],           color: TYPE_STYLE.fiesta.bg,        gradient: "linear-gradient(135deg, #b01fc4, #cc4100)", imageEvent: "e0000000-0000-4000-8000-000000000001" },
-  { id: "cultura",   label: "Cultura",         types: ["cultural"],                   color: TYPE_STYLE.cultural.bg,      gradient: TYPE_STYLE.cultural.gradient,      imageEvent: "e0000000-0000-4000-8000-000000000008" },
+  { id: "fiestas",   label: "Fiestas",         types: ["fiesta", "musica"],           color: TYPE_STYLE.fiesta.bg,        gradient: "linear-gradient(135deg, #b01fc4, #cc4100)", imageEvent: "EVT-000001" },
+  { id: "cultura",   label: "Cultura",         types: ["cultural"],                   color: TYPE_STYLE.cultural.bg,      gradient: TYPE_STYLE.cultural.gradient,      imageEvent: "EVT-000008" },
   { id: "deportes",  label: "Deportes",        types: ["deportivo"],                  color: TYPE_STYLE.deportivo.bg,     gradient: TYPE_STYLE.deportivo.gradient,     imageType: "deportivo" },
   { id: "academico", label: "Académico",       types: ["academico", "investigacion"], color: TYPE_STYLE.academico.bg,     gradient: TYPE_STYLE.academico.gradient,     imageType: "academico" },
-  { id: "comunidad", label: "Comunidad UCEVA", types: ["institucional"],              color: TYPE_STYLE.institucional.bg, gradient: TYPE_STYLE.institucional.gradient, imageEvent: "e0000000-0000-4000-8000-000000000004" },
+  { id: "comunidad", label: "Comunidad UCEVA", types: ["institucional"],              color: TYPE_STYLE.institucional.bg, gradient: TYPE_STYLE.institucional.gradient, imageEvent: "EVT-000004" },
 ];
 
 function eventCategories(ev) {

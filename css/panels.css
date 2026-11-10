@@ -144,6 +144,7 @@
 :root[data-theme="dark"] .st-suspendido, :root[data-theme="dark"] .avail-closed { background: #3a1a25; color: #ff8aa0; }
 .role-user { background: var(--lilac-lt); color: var(--gold); }
 .role-manager { background: var(--primary); color: #fff; }
+.role-admin { background: #1d1642; color: #fff; }
 
 /* ----- Admin: Finanzas ----- */
 .fin-kpi { position: relative; }

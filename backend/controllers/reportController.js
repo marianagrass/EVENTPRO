@@ -2,11 +2,12 @@
    controllers/reportController.js — Reportes acumulados (integrales) y comisiones del Agente
    ========================================================== */
 const { integrate, cumulative } = require("../lib/calculus");
-const { HttpError, isUuid, handleError } = require("../lib/http-errors");
+const { HttpError, isId, handleError } = require("../lib/http-errors");
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-module.exports = function reportController({ pool }) {
+module.exports = function reportController({ models }) {
+  const { reporte } = models;
   /**
    * Reporte del Admin: ingresos por mes de un año como ÁREA BAJO LA CURVA.
    *   f(t) = flujo de ingresos del día t (COP/día)  — viene de las boletas pagadas
@@ -15,24 +16,10 @@ module.exports = function reportController({ pool }) {
    * Se verifica contra un SUM() directo de SQL: ambos deben coincidir al peso.
    */
   async function monthlyRevenueData(year) {
-    const flow = await pool.query(
-      `WITH days AS (
-         SELECT generate_series(make_date($1, 1, 1), make_date($1, 12, 31), interval '1 day')::DATE AS day
-       ), sales AS (
-         SELECT (a.registered_at AT TIME ZONE 'America/Bogota')::DATE AS day, SUM(a.price_paid_cop)::BIGINT AS revenue, COUNT(*)::INT AS tickets
-           FROM attendees a JOIN events e ON e.id = a.event_id
-          WHERE a.status IN ('confirmado', 'pendiente') AND e.status <> 'cancelado' AND a.price_paid_cop > 0
-          GROUP BY 1
-       )
-       SELECT to_char(d.day, 'YYYY-MM-DD') AS day, COALESCE(s.revenue, 0)::BIGINT AS revenue, COALESCE(s.tickets, 0)::INT AS tickets
-         FROM days d LEFT JOIN sales s ON s.day = d.day ORDER BY d.day`, [year]);
-    const direct = await pool.query(
-      `SELECT COALESCE(SUM(a.price_paid_cop), 0)::BIGINT AS total FROM attendees a JOIN events e ON e.id = a.event_id
-        WHERE a.status IN ('confirmado', 'pendiente') AND e.status <> 'cancelado' AND a.price_paid_cop > 0
-          AND (a.registered_at AT TIME ZONE 'America/Bogota')::DATE BETWEEN make_date($1, 1, 1) AND make_date($1, 12, 31)`, [year]);
-
+    const flow = await reporte.flujoDiario(year);            // f(t): ingresos de cada día (COP/día)
+    const sqlTotal = await reporte.totalDirecto(year);       // SUM() directo, para contrastar
     const byMonth = Array.from({ length: 12 }, () => ({ flow: [], tickets: 0, days: [] }));
-    for (const r of flow.rows) {
+    for (const r of flow) {
       const m = Number(r.day.slice(5, 7)) - 1;
       byMonth[m].flow.push(Number(r.revenue));
       byMonth[m].days.push(r.day);
@@ -51,7 +38,6 @@ module.exports = function reportController({ pool }) {
       };
     });
     const total = monthTotals.reduce((a, b) => a + b, 0);
-    const sqlTotal = Number(direct.rows[0].total);
     return { year, unit: "COP", method: "Suma de Riemann diaria (Δt = 1 día)", months, totalCop: total, check: { sqlTotalCop: sqlTotal, diffCop: total - sqlTotal, reconciled: total === sqlTotal } };
   }
 
@@ -65,32 +51,27 @@ module.exports = function reportController({ pool }) {
 
   /**
    * Liquidación del Agente — función LINEAL:   L(E, T) = b·E + m·T
-   *   E eventos gestionados · T entradas gestionadas (check-in hechos por el agente)
-   *   b pago por evento · m pago por entrada      (tabla commission_rules)
+   *   E eventos gestionados (EVENTO.id_agente) · T entradas confirmadas vendidas en sus eventos
+   *   b pago por evento · m pago por entrada      (tabla regla_comision)
    */
   async function agentCommission(req, res) {
     try {
       const id = req.params.id;
-      if (!isUuid(id)) throw new HttpError("Identificador inválido.", 400);
-      const act = await pool.query("SELECT agent_id, name, events_managed, tickets_managed FROM v_agent_activity WHERE agent_id = $1", [id]);
-      if (!act.rows.length) throw new HttpError("No existe un agente con ese identificador.", 404);
-      const rule = (await pool.query("SELECT per_event_cop, per_ticket_cop FROM commission_rules WHERE id = 1")).rows[0];
-      const per = await pool.query(
-        `WITH mine AS (
-           SELECT id AS event_id FROM events WHERE created_by = $1
-           UNION SELECT event_id FROM attendees WHERE checked_in_by = $1 AND checked_in_at IS NOT NULL)
-         SELECT e.id, e.name, to_char(e.event_date, 'YYYY-MM-DD') AS date,
-                (SELECT COUNT(*) FROM attendees a WHERE a.event_id = e.id AND a.checked_in_by = $1 AND a.checked_in_at IS NOT NULL)::INT AS tickets
-           FROM mine JOIN events e ON e.id = mine.event_id ORDER BY e.event_date DESC`, [id]);
-      const E = act.rows[0].events_managed, T = act.rows[0].tickets_managed;
-      const b = rule.per_event_cop, m = rule.per_ticket_cop;
+      if (!isId(id)) throw new HttpError("Identificador inválido.", 400);
+      const act = await reporte.actividadAgente(id);
+      if (!act) throw new HttpError("No existe un agente con ese identificador.", 404);
+      const rule = await reporte.reglaComision();
+      const per = await reporte.desgloseAgente(id);
+      const E = act.eventos_gestionados, T = act.entradas_gestionadas;
+      const b = rule.b, m = rule.m;
       res.json({
-        agent: { id, name: act.rows[0].name },
+        agent: { id, name: act.nombre_completo },
         rule: { perEventCop: b, perTicketCop: m },
         eventsManaged: E, ticketsManaged: T,
         commissionCop: b * E + m * T,
+        storedCommissionCop: await reporte.comisionGuardada(id),        // AGENTE.comision (la mantiene la base)
         formula: `L(E, T) = ${b}·E + ${m}·T = ${b}·${E} + ${m}·${T}`,
-        breakdown: per.rows.map((r) => ({ eventId: r.id, name: r.name, date: r.date, tickets: r.tickets, subtotalCop: b + m * r.tickets })),
+        breakdown: per.map((r) => ({ eventId: r.id, name: r.name, date: r.date, tickets: r.tickets, subtotalCop: b + m * r.tickets })),
       });
     } catch (e) { handleError(res, e, "report.agentCommission"); }
   }

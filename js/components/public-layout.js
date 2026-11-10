@@ -134,6 +134,7 @@ const PublicLayout = {
         ${PublicFooter.render()}
         ${EventModal.render()}
         ${CheckoutModal.render()}
+        ${CancelReserva.render()}
         ${AuthModal.render()}
         ${Notice.modal()}
       </div>`;
