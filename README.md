@@ -1,4 +1,4 @@
-# EventPro — HTML, CSS y JavaScript puro + API Node/PostgreSQL
+# EventPro — HTML, CSS y JavaScript + API Node/PostgreSQL
 
 Sistema de organización de eventos con cuatro experiencias: **Home** (visitantes y usuarios), **panel de Agente** (operación, comisiones y demanda) y **panel de Administrador** (finanzas, reportes y cuentas).
 El frontend no usa frameworks; el backend es Node/Express con PostgreSQL (Neon).
