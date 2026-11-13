@@ -1,0 +1,48 @@
+/* ==========================================================
+   footer.css — Footer público (components/footer.js)
+   Fondo: el color más oscuro de la paleta (--ink) para que cierre el sitio.
+   4 columnas ≥ 1000px · 2 columnas en tablet · 1 columna en móvil
+   ========================================================== */
+
+.pf { position: relative; overflow: hidden; background: var(--ink); color: rgba(244,241,255,.74); font-size: 14px; }
+.pf::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--grad-party); }      /* línea de color que separa del resto */
+.pf-glow { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background: radial-gradient(520px 320px at 92% 0%, rgba(106,44,255,.45), transparent 70%),
+              radial-gradient(460px 300px at 0% 100%, rgba(255,61,154,.22), transparent 70%); }
+.pf-inner { position: relative; padding: 80px var(--gutter, 48px) 28px; }
+
+.pf-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 56px; }
+.pf-brand .brand-name { color: #fff; }
+.pf-brand p { max-width: 380px; margin-top: 18px; line-height: 1.75; font-size: 15px; }
+
+.pf h3 { position: relative; margin: 0 0 22px; padding-bottom: 14px; font-size: 16px; font-weight: 800; letter-spacing: -.005em; color: #fff; }
+.pf h3::after { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 3px; border-radius: 3px; background: var(--accent); }
+.pf ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.pf a { color: inherit; text-decoration: none; cursor: pointer; transition: color .2s, transform .2s, background .2s, border-color .2s; }
+.pf ul a { display: inline-block; }
+.pf ul a:hover { color: #fff; transform: translateX(4px); }
+.pf a:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; border-radius: 6px; }
+
+.pf-social { display: flex; gap: 10px; margin-top: 26px; }
+.pf-social a { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); }
+.pf-social a:hover { background: var(--accent); border-color: var(--accent); color: var(--ink); transform: translateY(-3px); }
+
+.pf-bottom { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 64px; padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,.12); font-size: 13px; color: rgba(244,241,255,.6); }
+.pf-top { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; font-weight: 600; color: #fff;
+  border: 1px solid rgba(255,255,255,.2); }
+.pf-top:hover { background: rgba(255,255,255,.12); }
+
+@media (max-width: 1000px) {
+  .pf-grid { grid-template-columns: 1fr 1fr; gap: 44px 32px; }
+  .pf-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 639.98px) {
+  .pf-inner { padding: 52px var(--gutter, 16px) max(24px, env(safe-area-inset-bottom)); }
+  .pf-grid { grid-template-columns: 1fr; gap: 34px; }
+  .pf ul { gap: 4px; }
+  .pf ul a { display: flex; align-items: center; min-height: 44px; }   /* enlaces con área de toque de 44px */
+  .pf-bottom { flex-direction: column-reverse; align-items: stretch; gap: 16px; margin-top: 40px; }
+  .pf-top { justify-content: center; min-height: 44px; }
+}

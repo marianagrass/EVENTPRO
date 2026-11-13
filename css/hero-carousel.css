@@ -1,0 +1,114 @@
+/* ==========================================================
+   hero-carousel.css — Carrusel Hero del Home público
+   Lo controla js/pages/public/hero-carousel.js
+   ========================================================== */
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+.hero-carousel {
+  position: relative; isolation: isolate; overflow: hidden; color: #fff; background: var(--ink);
+  height: clamp(600px, 92vh, 800px); touch-action: pan-y;
+}
+@supports (height: 1svh) { .hero-carousel { height: clamp(600px, 92svh, 800px); } }   /* svh: no se corta con la barra del navegador móvil */
+.hero-slides { position: absolute; inset: 0; }
+
+/* ----- slide ----- */
+.hero-slide {
+  position: absolute; inset: 0; opacity: 0; visibility: hidden;
+  background: linear-gradient(135deg, var(--slide), var(--ink));      /* se ve si la foto no carga */
+  transition: opacity .9s ease, visibility 0s linear .9s;
+}
+.hero-slide.is-active { opacity: 1; visibility: visible; transition: opacity .9s ease, visibility 0s; }
+
+.hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.02); }
+.hero-slide.is-active .hero-img { animation: heroZoom 10s ease-out forwards; }
+@keyframes heroZoom { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+
+/* Capas encima de la foto: oscurece a la izquierda (para leer el texto) y tiñe con el color del evento */
+.hero-shade { position: absolute; inset: 0; background:
+  linear-gradient(90deg, rgba(22,18,59,.9) 0%, rgba(22,18,59,.6) 42%, rgba(22,18,59,.12) 100%),
+  linear-gradient(0deg, rgba(22,18,59,.8) 0%, rgba(22,18,59,0) 45%); }
+.hero-glow  { position: absolute; inset: 0; opacity: .55; mix-blend-mode: screen; pointer-events: none;
+  background: radial-gradient(55% 75% at 12% 100%, var(--slide), transparent 70%); }
+
+/* ----- contenido ----- */
+.hero-content {
+  position: relative; z-index: 2; height: 100%; margin: 0;
+  padding: calc(var(--nav-h) + 24px) var(--gutter, 48px) 150px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;
+}
+.hero-content > * { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+.hero-slide.is-active .hero-content > * { opacity: 1; transform: none; }
+.hero-slide.is-active .hero-content > :nth-child(1) { transition-delay: .15s; }
+.hero-slide.is-active .hero-content > :nth-child(2) { transition-delay: .25s; }
+.hero-slide.is-active .hero-content > :nth-child(3) { transition-delay: .35s; }
+.hero-slide.is-active .hero-content > :nth-child(4) { transition-delay: .45s; }
+.hero-slide.is-active .hero-content > :nth-child(5) { transition-delay: .55s; }
+
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; margin-bottom: 20px;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); backdrop-filter: blur(10px);
+  font-size: 13px; font-weight: 700; letter-spacing: .03em; }
+.hero-tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(200,242,61,.25); animation: pulse 1.8s infinite; }
+
+.hero-title { font-size: clamp(30px, 6.6vw, 88px); overflow-wrap: break-word; hyphens: auto; font-weight: 800; line-height: .98; letter-spacing: -.035em; max-width: 840px; margin-bottom: 20px; text-wrap: balance; }
+.hero-title span { background: linear-gradient(90deg, #ffb347, #ff3d9a); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+.hero-text  { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.6; max-width: 560px; color: rgba(255,255,255,.88); margin-bottom: 22px; }
+.hero-meta  { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 30px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.92); }
+.hero-meta span { display: inline-flex; align-items: center; gap: 8px; }
+.hero-meta svg { color: var(--lime); flex-shrink: 0; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.btn-glass { background: rgba(255,255,255,.14); color: #fff; border: 1.5px solid rgba(255,255,255,.4); backdrop-filter: blur(10px); }
+.btn-glass:hover { background: rgba(255,255,255,.26); }
+
+/* ----- controles ----- */
+.hero-ui { position: absolute; left: 0; right: 0; bottom: 92px; z-index: 3; }
+.hero-ui-in { margin: 0; padding: 0 var(--gutter, 48px); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hero-dots { display: flex; gap: 8px; }
+.hero-dot { width: 52px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; display: flex; align-items: center; }
+.hero-dot b { display: block; width: 100%; height: 4px; border-radius: 4px; background: rgba(255,255,255,.32); overflow: hidden; transition: background .2s; }
+.hero-dot:hover b { background: rgba(255,255,255,.55); }
+.hero-dot i { display: block; width: 0; height: 100%; border-radius: inherit; background: #fff; }
+.hero-dot.is-active i { animation: heroFill var(--dur) linear forwards; }
+@keyframes heroFill { from { width: 0; } to { width: 100%; } }
+.hero-carousel.is-paused .hero-dot.is-active i { animation-play-state: paused; }
+
+.hero-controls { display: flex; align-items: center; gap: 10px; }
+.hero-count { font-family: var(--font-title); font-weight: 700; font-size: 14px; letter-spacing: .1em; margin-right: 6px; opacity: .9; }
+.hero-arrow { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: #fff;
+  background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.38); backdrop-filter: blur(10px); transition: background .2s, color .2s, transform .2s; }
+.hero-arrow:hover { background: #fff; color: var(--ink); transform: scale(1.06); }
+.hero-arrow:focus-visible, .hero-dot:focus-visible, .btn:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+
+/* ----- responsive ----- */
+@media (max-width: 767.98px) {
+  .hero-carousel { height: clamp(600px, 92vh, 740px); }
+  @supports (height: 1svh) { .hero-carousel { height: clamp(600px, 92svh, 740px); } }
+  .hero-content { padding: calc(var(--nav-h) + 16px) var(--gutter, 16px) 140px; }
+  .hero-ui { bottom: 76px; }
+  .hero-ui-in { padding: 0 var(--gutter, 16px); }
+  .hero-tag { font-size: 12px; padding: 6px 12px; margin-bottom: 14px; max-width: 100%; }
+  .hero-title { font-size: clamp(28px, 8.4vw, 40px); line-height: 1.04; letter-spacing: -.03em; margin-bottom: 14px; }   /* ≈ text-3xl en móvil */
+  .hero-text { font-size: 15px; line-height: 1.55; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .hero-meta { font-size: 13px; gap: 6px 16px; margin-bottom: 20px; }
+  .hero-actions { width: 100%; gap: 10px; }
+  .hero-actions .btn { flex: 1 1 100%; min-height: 50px; }
+  .hero-dot { width: 34px; height: 44px; }                  /* área de toque de 44px de alto */
+  .hero-count { display: none; }
+  .hero-arrow { width: 44px; height: 44px; }
+  .hero-controls { gap: 8px; }
+}
+@media (max-width: 479.98px) {
+  .hero-arrow:not([data-click="hero:toggle"]) { display: none; }   /* en teléfonos se desliza con el dedo; quedan puntos + pausa */
+}
+@media (max-width: 374.98px) {
+  .hero-title { font-size: 26px; }
+}
+
+/* Respeta "reducir movimiento" del sistema */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide, .hero-slide.is-active { transition: none; }
+  .hero-slide.is-active .hero-img { animation: none; }
+  .hero-content > * { transition: none; transform: none; }
+  .hero-dot.is-active i { animation: none; width: 100%; }
+  .hero-tag i { animation: none; }
+}
